@@ -1,10 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Security.Cryptography;
 using Newtonsoft.Json;
 
-namespace DejarixGame
+namespace Dejarix
 {
     class Program
     {
@@ -38,15 +39,17 @@ namespace DejarixGame
                 Console.WriteLine(card);
             }
 
-            var builder = ImmutableArray.CreateBuilder<int>();
+            var list = new List<int>();
             for (int i = 0; i < 16; ++i)
-                builder.Add(i);
+                list.Add(i);
             
-            var array = builder.MoveToImmutable();
-            Console.WriteLine(string.Join(", ", array));
+            Console.WriteLine(string.Join(", ", list));
             
             for (int i = 0; i < 8; ++i)
-                Console.WriteLine(string.Join(", ", array.Shuffled(random.Next)));
+            {
+                list.Shuffle(random.Next);
+                Console.WriteLine(string.Join(", ", list));
+            }
             
 
             SampleGameChanges();
