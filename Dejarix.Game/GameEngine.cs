@@ -13,6 +13,12 @@ namespace Dejarix
         // insert/remove Card at index in collection
     }
 
+    interface ICardCommand
+    {
+        void PerformAction(GameState gameState);
+        // string Serialize();
+    }
+
     class GameEngine
     {
         private readonly List<GameState> _gameStates = new List<GameState>();
