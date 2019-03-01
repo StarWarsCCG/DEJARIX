@@ -11,7 +11,7 @@ namespace Dejarix.Server
 {
     public class DejarixUser : IdentityUser<Guid>
     {
-        public DateTimeOffset RegistrationDate { get; set; } = DateTimeOffset.Now;
+        public DateTimeOffset RegistrationDate { get; set; }
     }
 
     public class Card
