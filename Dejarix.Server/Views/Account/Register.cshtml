@@ -1,9 +1,20 @@
 @{
     ViewData["Title"] = "Registration";
+    var errors = ViewData["RegistrationErrors"] as string[];
 }
 
 <h1>User Registration</h1>
 <p>Welcome to DEJARIX! Fill in the form below to create a new user account!</p>
+
+@if (errors != null && errors.Length > 0)
+{
+    <ul>
+        @foreach (var error in errors)
+        {
+            <li>@error</li>
+        }
+    </ul>
+}
 
 <form method="post" enctype="application/x-www-form-urlencoded">
     <div class="form-group">

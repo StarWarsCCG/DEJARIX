@@ -49,6 +49,10 @@ namespace Dejarix.Server.Controllers
             }
             else
             {
+                ViewData["RegistrationErrors"] = result.Errors
+                    .Select(e => e.Description)
+                    .ToArray();
+
                 return View("Register");
             }
         }
@@ -57,6 +61,12 @@ namespace Dejarix.Server.Controllers
         public IActionResult RegisterGet()
         {
             return View("Register");
+        }
+
+        [HttpGet("Verify/{token}")]
+        public IActionResult Verify(string token)
+        {
+            return Ok(token);
         }
     }
 }
