@@ -44,6 +44,13 @@ namespace Dejarix.Server.Controllers
             };
 
             var password = formData["register-password"];
+            var passwordConfirm = formData["register-password-confirm"];
+            if (password != passwordConfirm)
+            {
+                ViewData["RegistrationErrors"] = new string[]{"Passwords do not match."};
+                return View("Register");
+            }
+
             var result = await _userManager.CreateAsync(user, password);
 
             if (result.Succeeded)
@@ -51,7 +58,18 @@ namespace Dejarix.Server.Controllers
                 var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
                 var bytes = Encoding.UTF8.GetBytes(token);
                 var hexToken = bytes.ToHex();
-                return Ok(hexToken);
+                var url = $"http://localhost:5000/Account/Confirm?userId={user.Id}&token={hexToken}";
+                await _mailgun.SendEmailAsync(
+                    "DEJARIX Admin <admin@obviouspiranha.com>",
+                    user.Email.Yield(),
+                    null,
+                    null,
+                    $"Confirm {user.Email} on DEJARIX",
+                    "Visit this URL to confirm you email address at DEJARIX: " + url,
+                    $"<h1>DEJARIX Registration</h1><p>Click <a href='{url}'>here</a> to confirm your email address.</p>");
+                
+                ViewData["RegistrationSuccess"] = $"Registration successful! Check {user.Email} for your confirmation link!";
+                return View("Register");
             }
             else
             {

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Dejarix.Server
 {
@@ -48,6 +49,11 @@ namespace Dejarix.Server
             }
 
             return result;
+        }
+
+        public static IEnumerable<T> Yield<T>(this T value)
+        {
+            yield return value;
         }
     }
 }
