@@ -1,0 +1,33 @@
+@using Microsoft.AspNetCore.Identity
+@{
+    string userName = "Guest";
+    if (User.Identity.IsAuthenticated)
+    {
+        userName = User.Identity.Name;
+    }
+}
+
+@if (User.Identity.IsAuthenticated)
+{
+    <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">@userName</a>
+        <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+            <a class="dropdown-item" href="#">Profile</a>
+            <a class="dropdown-item" href="#">Decks</a>
+            <a class="dropdown-item" href="#">Game History</a>
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item" href="#">Sign Out</a>
+        </div>
+    </li>
+    <li class="nav-item">
+        <form method="post" enctype="application/x-www-form-urlencoded" action="/Account/SignOut">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-link text-dark">Sign Out</button>
+        </form>
+    </li>
+}
+else
+{
+    <li class="nav-item"><a class="nav-link text-dark" href="/Account/Register">Register</a></li>
+    <li class="nav-item"><a class="nav-link text-dark" href="/Account/SignIn">Sign In</a></li>
+}

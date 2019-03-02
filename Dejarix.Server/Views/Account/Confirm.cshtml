@@ -1,0 +1,8 @@
+@{
+    ViewData["Title"] = "Email Confirmation";
+    var user = ViewData["ConfirmedUser"] as Dejarix.Server.DejarixUser;
+}
+
+<h1>Email Confirmation</h1>
+<div class="alert alert-success">Email confirmed for @user.UserName (@user.Email)!</div>
+<p>Now you are able to <a href="/Account/SignIn">sign in</a>!</p>
