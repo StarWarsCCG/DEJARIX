@@ -48,6 +48,7 @@ namespace Dejarix.Server
                 {
                     options.SignIn.RequireConfirmedEmail = true;
                     options.User.RequireUniqueEmail = true;
+                    options.User.AllowedUserNameCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_";
                     options.Password.RequiredLength = 12;
                     options.Password.RequireNonAlphanumeric = false;
                     options.Password.RequireDigit = false;

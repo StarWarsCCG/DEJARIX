@@ -21,7 +21,8 @@ namespace Dejarix.Server
         public DejarixUser User { get; set; }
         public int CardId { get; set; }
         public Card Card { get; set; }
-        public int Quantity { get; set; }
+        public int HaveCount { get; set; }
+        public int WantCount { get; set; }
     }
 
     public class Card
@@ -40,8 +41,11 @@ namespace Dejarix.Server
     public class Deck
     {
         [Key] public Guid Id { get; set; }
+        public bool IsPublic { get; set; }
         public DateTimeOffset CreationDate { get; set; }
         public DateTimeOffset? DeletionDate { get; set; }
+        public Guid CreatorId { get; set; }
+        public DejarixUser Creator { get; set; }
         public Guid CardCollectionId { get; set; }
         public CardCollection CardCollection { get; set; }
     }
@@ -106,6 +110,10 @@ namespace Dejarix.Server
                 .HasOne(d => d.CardCollection)
                 .WithMany()
                 .OnDelete(DeleteBehavior.Restrict);
+            
+            builder
+                .Entity<Deck>()
+                .HasOne(d => d.Creator);
         }
     }
 }
