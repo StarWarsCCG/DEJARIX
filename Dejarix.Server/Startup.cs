@@ -84,7 +84,9 @@ namespace Dejarix.Server
                 if (context.Database.EnsureCreated())
                 {
                     // Seed important data!
-                    
+                    var seedFile = Configuration["SeedFile"];
+                    if (!string.IsNullOrEmpty(seedFile))
+                        context.SeedData(seedFile);
                 }
             }
 

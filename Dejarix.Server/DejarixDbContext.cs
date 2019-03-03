@@ -2,10 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.IO;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Npgsql.EntityFrameworkCore.PostgreSQL;
 
 namespace Dejarix.Server
@@ -19,7 +22,7 @@ namespace Dejarix.Server
     {
         public Guid UserId { get; set; }
         public DejarixUser User { get; set; }
-        public int CardId { get; set; }
+        public Guid CardId { get; set; }
         public Card Card { get; set; }
         public int HaveCount { get; set; }
         public int WantCount { get; set; }
@@ -27,15 +30,17 @@ namespace Dejarix.Server
 
     public class Card
     {
-        [Key] public int Id { get; set; }
-        public int SwIpId { get; set; }
+        [Key] public Guid FrontImageId { get; set; }
+        public Guid BackImageId { get; set; }
+        public string SwIpJson { get; set; }
+    }
+
+    public class CardFace
+    {
+        [Key] public Guid ImageId { get; set; }
         public string Title { get; set; }
-        public bool IsLightSide { get; set; }
-        public string DestinyText { get; set; }
-        public float LowDestinyValue { get; set; }
-        public float HighDestinyValue { get; set; }
-        public int CardTypeId { get; set; }
-        public int ExpansionId { get; set; }
+        public string Destiny { get; set; }
+        public Guid ExpansionId { get; set; }
     }
 
     public class Deck
@@ -64,7 +69,7 @@ namespace Dejarix.Server
     {
         public Guid CardCollectionId { get; set; }
         public CardCollection CardCollection { get; set; }
-        public int CardId { get; set; }
+        public Guid CardId { get; set; }
         public Card Card { get; set; }
         public int StartCount { get; set; }
         public int CardCount { get; set; }
@@ -81,6 +86,33 @@ namespace Dejarix.Server
         public DejarixDbContext(
             DbContextOptions<DejarixDbContext> options) : base(options)
         {
+        }
+
+        public void SeedData(string path)
+        {
+            var darkImageId = Guid.Parse("60cca2dd-a989-4c55-8a7b-cd6b86a95ce5");
+            var lightImageId = Guid.Parse("14c10fe6-199e-4b7d-9cea-1c7247e42d3e");
+
+            var text = File.ReadAllText(path);
+            var json = JArray.Parse(text);
+
+            foreach (JObject cardJson in json)
+            {
+                bool isLightSide = "Light".Equals((string)cardJson["Grouping"]);
+                if (!Guid.TryParse((string)cardJson["BackImageId"], out var backImageId))
+                    backImageId = isLightSide ? lightImageId : darkImageId;
+
+                var card = new Card
+                {
+                    FrontImageId = Guid.Parse((string)cardJson["FrontImageId"]),
+                    BackImageId = backImageId,
+                    SwIpJson = cardJson.ToString(Formatting.Indented)
+                };
+
+                Cards.Add(card);
+            }
+
+            SaveChanges();
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder builder)
