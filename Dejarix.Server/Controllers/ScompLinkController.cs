@@ -28,7 +28,7 @@ namespace Dejarix.Server.Controllers
 
             using (var context = _serviceProvider.GetService<DejarixDbContext>())
             {
-                var result = await context.CardFaces.Where(cf => cf.TitleNormalized.Contains(title)).ToListAsync();
+                var result = await context.CardFaces.Where(cf => cf.TitleNormalized.Contains(titleNormalized)).ToListAsync();
                 return Json(result);
             }
         }
