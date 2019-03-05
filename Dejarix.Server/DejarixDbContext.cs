@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.IO;
+using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -39,8 +40,9 @@ namespace Dejarix.Server
     {
         [Key] public Guid ImageId { get; set; }
         public string Title { get; set; }
+        public string TitleNormalized { get; set; }
         public string Destiny { get; set; }
-        public Guid ExpansionId { get; set; }
+        public string Expansion { get; set; }
     }
 
     public class Deck
@@ -78,6 +80,7 @@ namespace Dejarix.Server
     public class DejarixDbContext : IdentityDbContext<DejarixUser, IdentityRole<Guid>, Guid>
     {
         public DbSet<Card> Cards { get; set; }
+        public DbSet<CardFace> CardFaces { get; set; }
         public DbSet<Deck> Decks { get; set; }
         public DbSet<CardCollection> CardCollections { get; set; }
         public DbSet<CardInCollection> CardsInCollections { get; set; }
@@ -99,7 +102,8 @@ namespace Dejarix.Server
             foreach (JObject cardJson in json)
             {
                 bool isLightSide = "Light".Equals((string)cardJson["Grouping"]);
-                if (!Guid.TryParse((string)cardJson["BackImageId"], out var backImageId))
+                bool isObjective = Guid.TryParse((string)cardJson["BackImageId"], out var backImageId);
+                if (!isObjective)
                     backImageId = isLightSide ? lightImageId : darkImageId;
 
                 var card = new Card
@@ -110,6 +114,43 @@ namespace Dejarix.Server
                 };
 
                 Cards.Add(card);
+
+                if (isObjective)
+                {
+                    var frontCardFace = new CardFace
+                    {
+                        ImageId = Guid.Parse((string)cardJson["FrontImageId"]),
+                        Title = (string)cardJson["ObjectiveFrontName"],
+                        Destiny = "0"
+                    };
+
+                    frontCardFace.TitleNormalized = frontCardFace.Title.SearchNormalized();
+
+                    var backCardFace = new CardFace
+                    {
+                        ImageId = Guid.Parse((string)cardJson["BackImageId"]),
+                        Title = (string)cardJson["ObjectiveBackName"],
+                        Destiny = "7"
+                    };
+
+                    backCardFace.TitleNormalized = backCardFace.Title.SearchNormalized();
+
+                    CardFaces.Add(frontCardFace);
+                    CardFaces.Add(backCardFace);
+                }
+                else
+                {
+                    var cardFace = new CardFace
+                    {
+                        ImageId = Guid.Parse((string)cardJson["FrontImageId"]),
+                        Title = (string)cardJson["CardName"],
+                        Destiny = (string)cardJson["Destiny"]
+                    };
+
+                    cardFace.TitleNormalized = cardFace.Title.SearchNormalized();
+
+                    CardFaces.Add(cardFace);
+                }
             }
 
             SaveChanges();

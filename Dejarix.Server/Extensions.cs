@@ -6,6 +6,9 @@ namespace Dejarix.Server
     static class Extensions
     {
         private const string HexDigits = "0123456789abcdef";
+
+        private static bool InRange(char c, char low, char high) => low <= c && c <= high;
+
         public static string ToHex(this byte[] bytes)
         {
             var result = new char[bytes.Length * 2];
@@ -25,11 +28,11 @@ namespace Dejarix.Server
 
         private static int FromHex(char c)
         {
-            if ('0' <= c && c <= '9')
+            if (InRange(c, '0', '9'))
                 return c - '0';
-            else if ('a' <= c && c <= 'f')
+            else if (InRange(c, 'a', 'f'))
                 return c - 'a' + 10;
-            else if ('A' <= c && c <= 'F')
+            else if (InRange(c, 'A', 'F'))
                 return c - 'A' + 10;
             else
                 throw new ArgumentException("Invalid hex digit: " + c);
@@ -54,6 +57,29 @@ namespace Dejarix.Server
         public static IEnumerable<T> Yield<T>(this T value)
         {
             yield return value;
+        }
+
+        public static string SearchNormalized(this string text)
+        {
+            if (text == null)
+                return null;
+            
+            var buffer = new char[text.Length];
+            int n = 0;
+
+            foreach (var c in text)
+            {
+                if (InRange(c, 'a', 'z') || InRange(c, '0', '9'))
+                {
+                    buffer[n++] = c;
+                }
+                else if ('A' <= c && c <= 'Z')
+                {
+                    buffer[n++] = (char)(c + 32);
+                }
+            }
+
+            return new string(buffer, 0, n);
         }
     }
 }
