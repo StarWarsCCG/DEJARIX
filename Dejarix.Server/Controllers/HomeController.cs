@@ -28,13 +28,16 @@ namespace Dejarix.Server.Controllers
             return View();
         }
 
-        
+        public IActionResult DeckBuilder()
+        {
+            return View();
+        }
 
         public async Task<IActionResult> Card(Guid id)
         {
             using (var context = _serviceProvider.GetService<DejarixDbContext>())
             {
-                var card = await context.Cards.FindAsync(id);
+                var card = await context.CardImages.FindAsync(id);
 
                 if (card == null)
                 {
@@ -42,10 +45,9 @@ namespace Dejarix.Server.Controllers
                 }
                 else
                 {
-                    var cardFace = await context.CardFaces.FindAsync(card.FrontImageId);
-                    ViewData["Title"] = cardFace?.Title ?? "untitled card";
-                    ViewData["FrontImage"] = Url.Content($"~/images/cards/{card.FrontImageId}.jpg");
-                    ViewData["BackImage"] = Url.Content($"~/images/cards/{card.BackImageId}.jpg");
+                    ViewData["Title"] = card?.Title ?? "untitled card";
+                    ViewData["FrontImage"] = Url.Content($"~/images/cards/{card.Id}.jpg");
+                    ViewData["BackImage"] = Url.Content($"~/images/cards/{card.OtherId}.jpg");
                     return View();
                 }
             }

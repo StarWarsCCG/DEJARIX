@@ -24,11 +24,11 @@ namespace Dejarix.Server.Controllers
             var titleNormalized = title.SearchNormalized();
 
             if (string.IsNullOrEmpty(titleNormalized))
-                return Json(new CardFace[]{});
+                return Json(new CardImage[]{});
 
             using (var context = _serviceProvider.GetService<DejarixDbContext>())
             {
-                var result = await context.CardFaces.Where(cf => cf.TitleNormalized.Contains(titleNormalized)).ToListAsync();
+                var result = await context.CardImages.Where(cf => cf.TitleNormalized.Contains(titleNormalized)).ToListAsync();
                 return Json(result);
             }
         }

@@ -1,0 +1,120 @@
+@{
+    ViewData["Title"] = "Deck Builder";
+}
+
+@section Scripts{
+    <script src="~/js/star-wars-cards.js" asp-append-version="true"></script>
+    <script src="~/js/deck-builder.js" asp-append-version="true"></script>
+}
+
+<h1>Deck Builder</h1>
+
+<div id="deck-builder" class="row">
+    <div class="col-4">
+        <h3>Card Finder</h3>
+        <p>
+            <label for="card-search-title">Title</label>
+            <input type="text" id="card-search-title" />
+            <button id="card-search-button" type="button" class="btn btn-primary btn-sm">Search</button>
+        </p>
+        <p>
+            <select id="card-search-type-filter">
+                <option value="all">[all card types]</option>
+                <option value="admirals-order">Admiral's Order</option>
+                <option value="character">Character</option>
+                <option value="character-alien">Character - Alien</option>
+                <option value="character-dark-jedi-master">Character - Dark Jedi Master</option>
+                <option value="character-droid">Character - Droid</option>
+                <option value="character-first-order">Character - First Order</option>
+                <option value="character-imperial">Character - Imperial</option>
+                <option value="character-jedi-master">Character - Jedi Master</option>
+                <option value="character-rebel">Character - Rebel</option>
+                <option value="character-republic">Character - Republic</option>
+                <option value="character-resistance">Character - Resistance</option>
+                <option value="character-sith">Character - Sith</option>
+                <option value="creature">Creature</option>
+                <option value="defensive-shield">Defensive Shield</option>
+                <option value="device">Device</option>
+                <option value="effect">Effect</option>
+                <option value="effect-immediate">Effect - Immediate</option>
+                <option value="effect-mobile">Effect - Mobile</option>
+                <option value="effect-political">Effect - Political</option>
+                <option value="effect-starting">Effect - Starting</option>
+                <option value="effect-utinni">Effect - Utinni</option>
+                <option value="epic-event">Epic Event</option>
+                <option value="interrupt">Interrupt</option>
+                <option value="interrupt-lost">Interrupt - Lost</option>
+                <option value="interrupt-starting">Interrupt - Starting</option>
+                <option value="interrupt-used">Interrupt - Used</option>
+                <option value="jedi-test">Jedi Test</option>
+                <option value="location">Location</option>
+                <option value="location-sector">Location - Sector</option>
+                <option value="location-site">Location - Site</option>
+                <option value="location-system">Location - System</option>
+                <option value="objective">Objective</option>
+                <option value="podracer">Podracer</option>
+                <option value="starship">Starship</option>
+                <option value="starship-capital">Starship - Capital</option>
+                <option value="starship-squadron">Starship - Squadron</option>
+                <option value="starship-starfighter">Starship - Starfighter</option>
+                <option value="vehicle">Vehicle</option>
+                <option value="vehicle-combat">Vehicle - Combat</option>
+                <option value="vehicle-creature">Vehicle - Creature</option>
+                <option value="vehicle-shuttle">Vehicle - Shuttle</option>
+                <option value="vehicle-transport">Vehicle - Transport</option>
+                <option value="weapon">Weapon</option>
+                <option value="weapon-artillery">Weapon - Artillery</option>
+                <option value="weapon-automated">Weapon - Automated</option>
+                <option value="weapon-character">Weapon - Character</option>
+                <option value="weapon-death-star">Weapon - Death Star</option>
+                <option value="weapon-death-star-ii">Weapon - Death Star II</option>
+                <option value="weapon-starship">Weapon - Starship</option>
+                <option value="weapon-vehicle">Weapon - Vehicle</option>
+            </select>
+        </p>
+        <table>
+            <tbody>
+                <tr>
+                    <td><img src="~/images/types/admirals order.png" title="Admiral's Order" alt="Admiral's Order" /></td>
+                    <td><img src="~/images/types/alien.png" title="Alien" alt="Alien" /></td>
+                    <td><img src="~/images/types/creature.png" title="Creature" alt="Creature" /></td>
+                    <td><img src="~/images/types/dark jedi master.png" title="Dark Jedi Master" alt="Dark Jedi Master" /></td>
+                    <td><img src="~/images/types/defensive shield.png" title="Defensive Shield" alt="Defensive Shield" /></td>
+                    <td><img src="~/images/types/device.png" title="Device" alt="Device" /></td>
+                    <td><img src="~/images/types/droid.png" title="Droid" alt="Droid" /></td>
+                    <td><img src="~/images/types/effect.png" title="Effect" alt="Effect" /></td>
+                </tr>
+                <tr>
+                    <td><img src="~/images/types/epic event.png" title="Epic Event" alt="Epic Event" /></td>
+                    <td><img src="~/images/types/imperial.png" title="Imperial" alt="Imperial" /></td>
+                    <td><img src="~/images/types/interrupt.png" title="Interrupt" alt="Interrupt" /></td>
+                    <td><img src="~/images/types/jedi master.png" title="Jedi Master" alt="Jedi Master" /></td>
+                    <td><img src="~/images/types/jedi test.png" title="Jedi Test" alt="Jedi Test" /></td>
+                    <td><img src="~/images/types/maul.png" title="Maul" alt="Maul" /></td>
+                    <td><img src="~/images/types/objective.png" title="Objective" alt="Objective" /></td>
+                    <td><img src="~/images/types/podracer.png" title="Podracer" alt="Podracer" /></td>
+                </tr>
+                <tr>
+                    <td><img src="~/images/types/rebel.png" title="Rebel" alt="Rebel" /></td>
+                    <td><img src="~/images/types/republic.png" title="Republic" alt="Republic" /></td>
+                    <td><img src="~/images/types/starship.png" title="Starship" alt="Starship" /></td>
+                    <td><img src="~/images/types/vehicle.png" title="Vehicle" alt="Vehicle" /></td>
+                    <td><img src="~/images/types/weapon.png" title="Weapon" alt="Weapon" /></td>
+                    <td><img src="~/images/types/first order.png" title="First Order" alt="First Order" /></td>
+                    <td><img src="~/images/types/resistance.png" title="Resistance" alt="Resistance" /></td>
+                </tr>
+            </tbody>
+        </table>
+        <div id="card-search-message"></div>
+    </div>
+    <div class="col-4">
+        <h3>Search Result</h3>
+        <table class="table table-sm">
+            <tbody id="card-search-table-body">
+            </tbody>
+        </table>
+    </div>
+    <div class="col-4">
+        <h3>Current Deck</h3>
+    </div>
+</div>

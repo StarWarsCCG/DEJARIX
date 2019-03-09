@@ -24,25 +24,21 @@ namespace Dejarix.Server
         public Guid UserId { get; set; }
         public DejarixUser User { get; set; }
         public Guid CardId { get; set; }
-        public Card Card { get; set; }
+        public CardImage Card { get; set; }
         public int HaveCount { get; set; }
         public int WantCount { get; set; }
     }
 
-    public class Card
+    public class CardImage
     {
-        [Key] public Guid FrontImageId { get; set; }
-        public Guid BackImageId { get; set; }
-        public string SwIpJson { get; set; }
-    }
-
-    public class CardFace
-    {
-        [Key] public Guid ImageId { get; set; }
+        [Key] public Guid Id { get; set; }
+        public Guid OtherId { get; set; }
+        public bool IsFront { get; set; }
         public string Title { get; set; }
         public string TitleNormalized { get; set; }
         public string Destiny { get; set; }
         public string Expansion { get; set; }
+        public string InfoJson { get; set; }
     }
 
     public class Deck
@@ -72,15 +68,14 @@ namespace Dejarix.Server
         public Guid CardCollectionId { get; set; }
         public CardCollection CardCollection { get; set; }
         public Guid CardId { get; set; }
-        public Card Card { get; set; }
+        public CardImage Card { get; set; }
         public int StartCount { get; set; }
         public int CardCount { get; set; }
     }
 
     public class DejarixDbContext : IdentityDbContext<DejarixUser, IdentityRole<Guid>, Guid>
     {
-        public DbSet<Card> Cards { get; set; }
-        public DbSet<CardFace> CardFaces { get; set; }
+        public DbSet<CardImage> CardImages { get; set; }
         public DbSet<Deck> Decks { get; set; }
         public DbSet<CardCollection> CardCollections { get; set; }
         public DbSet<CardInCollection> CardsInCollections { get; set; }
@@ -93,64 +88,23 @@ namespace Dejarix.Server
 
         public void SeedData(string path)
         {
-            var darkImageId = Guid.Parse("60cca2dd-a989-4c55-8a7b-cd6b86a95ce5");
-            var lightImageId = Guid.Parse("14c10fe6-199e-4b7d-9cea-1c7247e42d3e");
-
             var text = File.ReadAllText(path);
             var json = JArray.Parse(text);
 
             foreach (JObject cardJson in json)
             {
-                bool isLightSide = "Light".Equals((string)cardJson["Grouping"]);
-                bool isObjective = Guid.TryParse((string)cardJson["BackImageId"], out var backImageId);
-                if (!isObjective)
-                    backImageId = isLightSide ? lightImageId : darkImageId;
-
-                var card = new Card
+                var cardImage = new CardImage
                 {
-                    FrontImageId = Guid.Parse((string)cardJson["FrontImageId"]),
-                    BackImageId = backImageId,
-                    SwIpJson = cardJson.ToString(Formatting.Indented)
+                    Id = Guid.Parse((string)cardJson["ImageId"]),
+                    OtherId = Guid.Parse((string)cardJson["OtherImageId"]),
+                    Title = (string)cardJson["CardName"],
+                    Destiny = (string)cardJson["Destiny"],
+                    Expansion = (string)cardJson["Expansion"],
+                    InfoJson = cardJson.ToString(Formatting.Indented)
                 };
 
-                Cards.Add(card);
-
-                if (isObjective)
-                {
-                    var frontCardFace = new CardFace
-                    {
-                        ImageId = Guid.Parse((string)cardJson["FrontImageId"]),
-                        Title = (string)cardJson["ObjectiveFrontName"],
-                        Destiny = "0"
-                    };
-
-                    frontCardFace.TitleNormalized = frontCardFace.Title.SearchNormalized();
-
-                    var backCardFace = new CardFace
-                    {
-                        ImageId = Guid.Parse((string)cardJson["BackImageId"]),
-                        Title = (string)cardJson["ObjectiveBackName"],
-                        Destiny = "7"
-                    };
-
-                    backCardFace.TitleNormalized = backCardFace.Title.SearchNormalized();
-
-                    CardFaces.Add(frontCardFace);
-                    CardFaces.Add(backCardFace);
-                }
-                else
-                {
-                    var cardFace = new CardFace
-                    {
-                        ImageId = Guid.Parse((string)cardJson["FrontImageId"]),
-                        Title = (string)cardJson["CardName"],
-                        Destiny = (string)cardJson["Destiny"]
-                    };
-
-                    cardFace.TitleNormalized = cardFace.Title.SearchNormalized();
-
-                    CardFaces.Add(cardFace);
-                }
+                cardImage.TitleNormalized = cardImage.Title.SearchNormalized();
+                CardImages.Add(cardImage);
             }
 
             SaveChanges();
