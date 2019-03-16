@@ -3,7 +3,6 @@
 }
 
 @section Scripts{
-    <script src="~/js/star-wars-cards.js" asp-append-version="true"></script>
     <script src="~/js/deck-builder.js" asp-append-version="true"></script>
 }
 
@@ -15,7 +14,15 @@
         <p>
             <label for="card-search-title">Title</label>
             <input type="text" id="card-search-title" />
-            <button id="card-search-button" type="button" class="btn btn-primary btn-sm">Search</button>
+            <button id="card-search-button" type="button" class="btn btn-primary btn-sm" disabled="disabled">Search</button>
+        </p>
+        <p>
+            <label for="card-search-gametext">Lore</label>
+            <input type="text" id="card-search-lore" />
+        </p>
+        <p>
+            <label for="card-search-gametext">Gametext</label>
+            <input type="text" id="card-search-gametext" />
         </p>
         <p>
             <select id="card-search-type-filter">
@@ -73,36 +80,49 @@
             </select>
         </p>
         <p>
-            <select id="card-search-set-filter">
-                <option value="all">[all expansions]</option>
-                <option>Dagobah</option>
-                <option>Hoth</option>
+            <select id="card-search-expansion-filter">
+                <option>[all expansions]</option>
                 <option>Premiere</option>
-                <option>Special Edition</option>
-                <option>Theed Palace</option>
-                <option>Cloud City</option>
-                <option>Third Anthology</option>
-                <option>Reflections II</option>
-                <option>Enhanced Premiere Pack</option>
-                <option>Enhanced Jabba's Palace</option>
-                <option>Jabba's Palace Sealed Deck</option>
-                <option>Coruscant</option>
                 <option>Premiere 2 Player</option>
-                <option>Jabba's Palace</option>
-                <option>Reflections III</option>
-                <option>Rebel Leader Cards</option>
-                <option>Endor</option>
-                <option>Demonstration Deck Premium Card Set</option>
                 <option>Jedi Pack</option>
-                <option>Official Tournament Sealed Deck</option>
-                <option>Tatooine</option>
-                <option>Hoth 2 Player</option>
+                <option>Rebel Leader Cards</option>
                 <option>A New Hope</option>
+                <option>Hoth</option>
+                <option>Hoth 2 Player</option>
+                <option>Dagobah</option>
+                <option>First Anthology</option>
+                <option>Cloud City</option>
+                <option>Jabba's Palace</option>
+                <option>Official Tournament Sealed Deck</option>
+                <option>Special Edition</option>
+                <option>Enhanced Premiere Pack</option>
+                <option>Endor</option>
                 <option>Enhanced Cloud City</option>
+                <option>Enhanced Jabba's Palace</option>
+                <option>Third Anthology</option>
                 <option>Death Star II</option>
+                <option>Jabba's Palace Sealed Deck</option>
+                <option>Reflections II</option>
+                <option>Tatooine</option>
+                <option>Coruscant</option>
+                <option>Reflections III</option>
+                <option>Theed Palace</option>
+                <option>Virtual Card Set #0</option>
+                <option>Virtual Card Set #1</option>
+                <option>Virtual Card Set #2</option>
+                <option>Virtual Card Set #3</option>
+                <option>Virtual Card Set #4</option>
+                <option>Virtual Card Set #5</option>
+                <option>Virtual Card Set #6</option>
+                <option>Virtual Card Set #7</option>
+                <option>Virtual Card Set #8</option>
+                <option>Virtual Card Set #9</option>
+                <option>Virtual Card Set #10</option>
+                <option>Demonstration Deck Premium Card Set</option>
             </select>
         </p>
         <div id="card-search-message"></div>
+        <div id="card-search-image"></div>
     </div>
     <div class="col-4">
         <h3>Search Result</h3>

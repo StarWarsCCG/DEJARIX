@@ -43,6 +43,10 @@ namespace Dejarix.Server.Controllers
                 {
                     return NotFound();
                 }
+                else if (!card.IsFront)
+                {
+                    return Redirect("/Home/Card/" + card.OtherId);
+                }
                 else
                 {
                     ViewData["Title"] = card?.Title ?? "untitled card";

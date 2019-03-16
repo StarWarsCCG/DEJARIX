@@ -1,15 +1,22 @@
 const cardSearchTitle = $("#card-search-title");
 const cardSearchTypeFilter = $("#card-search-type-filter");
+const cardSearchExpansionFilter = $("#card-search-expansion-filter");
 const cardSearchTableBody = $("#card-search-table-body");
 const cardSearchMessage = $("#card-search-message");
 const cardSearchButton = $("#card-search-button");
+const cardSearchImage = $("#card-search-image");
+var starWarsCards = null;
 
 function areEqual(str1, str2) {
-    return str1.localeCompare(str2) == 0;
+    return String(str1).localeCompare(str2) == 0;
 }
 
 function isCardType(card, primaryType, secondaryType) {
     return areEqual(card.PrimaryType, primaryType) && card.SecondaryTypes.includes(secondaryType);
+}
+
+function compareByName(card1, card2) {
+    return card1.CardName.localeCompare(card2.CardName);
 }
 
 const typeFilterMap = {
@@ -70,49 +77,84 @@ function searchNormalized(text) {
 }
 
 function doQuery() {
-    const searchString = searchNormalized(cardSearchTitle.val());
+    if (areEqual(cardSearchButton.attr("disabled"), "disabled")) {
+        return;
+    }
+
+    const titleSearch = searchNormalized(cardSearchTitle.val());
     cardSearchMessage.empty();
     cardSearchMessage.removeClass();
     
-    if (searchString && searchString.length > 2) {
-        cardSearchTableBody.empty();
+    cardSearchTableBody.empty();
 
-        const filters = [function(c) { return c.CardNameNormalized.includes(searchString); }];
-        const typeFilter = cardSearchTypeFilter.val();
+    const results = [];
+    const filters = [c => results.length <= 100];
+    const typeFilter = cardSearchTypeFilter.val();
 
-        if (typeFilterMap.hasOwnProperty(typeFilter)) {
-            filters.push(typeFilterMap[typeFilter]);
+    if (titleSearch) {
+        filters.push(c => c.CardNameNormalized.includes(titleSearch));
+    }
+
+    if (typeFilterMap.hasOwnProperty(typeFilter)) {
+        filters.push(typeFilterMap[typeFilter]);
+    }
+
+    const expansionFilter = cardSearchExpansionFilter.val();
+
+    if (expansionFilter && !expansionFilter.startsWith('[')) {
+        filters.push(c => areEqual(c.Expansion, expansionFilter));
+    }
+
+    starWarsCards.forEach(function(item) {
+        for (let filter of filters) {
+            if (!filter(item)) {
+                return;
+            }
         }
 
-        const results = [];
+        results.push(item);
+    });
 
-        starWarsCards.forEach(function(item) {
-            let success = true;
-
-            for (let filter of filters) {
-                if (!filter(item)) {
-                    success = false;
-                    break;
-                }
-            }
-
-            if (success) {
-                results.push(item);
-            }
-        });
-
-        const htmlResults = [];
-
-        results.forEach(function(item) {
-            const uniqueness = item.hasOwnProperty("Uniqueness") ? item.Uniqueness : '';
-            htmlResults.push(
-                '<tr><td><img src="/images/expansions/' + item.Expansion + '.png?v=2" title="' + item.Expansion + '" alt="" /></td><td>' + uniqueness + item.CardName + '</td><td class="text-sm-right">' + item.Destiny + '</td></tr>');
-        });
-
-        cardSearchTableBody.append(htmlResults.join(''));
-    } else {
+    if (results.length > 100) {
+        results.pop();
         cardSearchMessage.addClass("alert alert-warning");
-        cardSearchMessage.text("Requires 3 characters to search.");
+        cardSearchMessage.text("Results limited to 100.");
+    }
+
+    results.sort(compareByName);
+
+    const htmlResults = [];
+
+    results.forEach(function(item) {
+        const uniqueness = item.hasOwnProperty("Uniqueness") ? item.Uniqueness : '';
+        htmlResults.push(
+            '<tr id="' +
+            item.ImageId +
+            '"><td><img src="/images/expansions/' +
+            item.Expansion.replace('#', '') +
+            '.png?v=2" title="' +
+            item.Expansion +
+            '" alt="" /></td><td>' +
+            uniqueness +
+            item.CardName +
+            '</td><td class="text-sm-right">' +
+            item.Destiny +
+            '</td></tr>');
+    });
+
+    cardSearchTableBody.append(htmlResults.join(''));
+    $("#card-search-table-body tr").click(function(e) {
+        cardSearchImage.empty();
+        cardSearchImage.append(
+            '<img src="/images/cards/' +
+            e.currentTarget.id +
+            '.jpg" alt="" />');
+        // console.log(e);
+    });
+    if (titleSearch) {
+    } else {
+        // cardSearchMessage.addClass("alert alert-warning");
+        // cardSearchMessage.text("Requires 3 characters to search.");
     }
 }
 
@@ -125,4 +167,22 @@ cardSearchTitle.keypress(function(e) {
 });
 
 cardSearchButton.click(doQuery);
+cardSearchTypeFilter.change(doQuery);
+cardSearchExpansionFilter.change(doQuery);
 cardSearchTitle.focus();
+
+$.ajax({
+    url: "/ScompLink/AllCards",
+    success: function(result) {
+        starWarsCards = result;
+        cardSearchButton.removeAttr("disabled");
+
+        cardSearchMessage.addClass("alert alert-success");
+        cardSearchMessage.text("Database loaded.");
+    },
+    error: function() {
+        cardSearchMessage.addClass("alert alert-danger");
+        cardSearchMessage.text("Error retrieving card database.");
+    }
+});
+

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Dejarix.Server.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json.Linq;
 
 namespace Dejarix.Server.Controllers
 {
@@ -30,6 +31,16 @@ namespace Dejarix.Server.Controllers
             {
                 var result = await context.CardImages.Where(cf => cf.TitleNormalized.Contains(titleNormalized)).ToListAsync();
                 return Json(result);
+            }
+        }
+
+        public async Task<IActionResult> AllCards()
+        {
+            using (var context = _serviceProvider.GetService<DejarixDbContext>())
+            {
+                var jsonText = await context.CardImages.Select(ci => ci.InfoJson).ToListAsync();
+                var objects = new JArray(jsonText.Select(jt => JObject.Parse(jt)));
+                return Json(objects);
             }
         }
     }

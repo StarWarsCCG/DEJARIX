@@ -19,14 +19,16 @@ namespace Dejarix.Server
         public DateTimeOffset RegistrationDate { get; set; }
     }
 
-    public class CardOwnership
+    public class CardInventory
     {
         public Guid UserId { get; set; }
         public DejarixUser User { get; set; }
-        public Guid CardId { get; set; }
-        public CardImage Card { get; set; }
-        public int HaveCount { get; set; }
-        public int WantCount { get; set; }
+        public Guid CardImageId { get; set; }
+        public CardImage CardImage { get; set; }
+        public int PublicHaveCount { get; set; }
+        public int PublicWantCount { get; set; }
+        public int PrivateHaveCount { get; set; }
+        public int PrivateWantCount { get; set; }
     }
 
     public class CardImage
@@ -71,6 +73,7 @@ namespace Dejarix.Server
         public CardImage Card { get; set; }
         public int StartCount { get; set; }
         public int CardCount { get; set; }
+        public int OutsideCount { get; set; }
     }
 
     public class DejarixDbContext : IdentityDbContext<DejarixUser, IdentityRole<Guid>, Guid>
@@ -79,7 +82,7 @@ namespace Dejarix.Server
         public DbSet<Deck> Decks { get; set; }
         public DbSet<CardCollection> CardCollections { get; set; }
         public DbSet<CardInCollection> CardsInCollections { get; set; }
-        public DbSet<CardOwnership> OwnedCards { get; set; }
+        public DbSet<CardInventory> OwnedCards { get; set; }
 
         public DejarixDbContext(
             DbContextOptions<DejarixDbContext> options) : base(options)
@@ -97,6 +100,7 @@ namespace Dejarix.Server
                 {
                     Id = Guid.Parse((string)cardJson["ImageId"]),
                     OtherId = Guid.Parse((string)cardJson["OtherImageId"]),
+                    IsFront = (bool)cardJson["IsFront"],
                     Title = (string)cardJson["CardName"],
                     Destiny = (string)cardJson["Destiny"],
                     Expansion = (string)cardJson["Expansion"],
@@ -118,9 +122,9 @@ namespace Dejarix.Server
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
-            builder.Entity<CardOwnership>().HasKey(co => new{co.UserId, co.CardId});
-            builder.Entity<CardOwnership>().HasOne(co => co.User);
-            builder.Entity<CardOwnership>().HasOne(co => co.Card);
+            builder.Entity<CardInventory>().HasKey(co => new{co.UserId, co.CardImageId});
+            builder.Entity<CardInventory>().HasOne(co => co.User);
+            builder.Entity<CardInventory>().HasOne(co => co.CardImage);
 
             builder
                 .Entity<CardCollection>()
