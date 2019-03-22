@@ -68,7 +68,7 @@ namespace Dejarix.Server.Controllers
                 var bytes = Encoding.UTF8.GetBytes(token);
                 var hexToken = bytes.ToHex();
                 var url = $"{_linkHost}/Account/Confirm?userId={user.Id}&token={hexToken}";
-                await _mailgun.SendEmailAsync(
+                var response = await _mailgun.SendEmailAsync(
                     _sender,
                     user.Email.Yield(),
                     null,
@@ -76,6 +76,8 @@ namespace Dejarix.Server.Controllers
                     $"Confirm {user.Email} on DEJARIX",
                     "Visit this URL to confirm your email address at DEJARIX: " + url,
                     $"<h2>DEJARIX Registration</h2><p>Click <a href='{url}'>here</a> to confirm your email address.</p>");
+                
+                response.EnsureSuccessStatusCode();
                 
                 ViewData["RegistrationSuccess"] = $"Registration successful! Check {user.Email} for your confirmation link!";
                 return View("Register");
@@ -182,7 +184,7 @@ namespace Dejarix.Server.Controllers
                 var bytes = Encoding.UTF8.GetBytes(token);
                 var hexToken = bytes.ToHex();
                 var url = $"{_linkHost}/Account/Reset?userId={user.Id}&token={hexToken}";
-                await _mailgun.SendEmailAsync(
+                var response = await _mailgun.SendEmailAsync(
                     _sender,
                     user.Email.Yield(),
                     null,
@@ -190,6 +192,8 @@ namespace Dejarix.Server.Controllers
                     $"DEJARIX - Reset password for {user.UserName}",
                     "Visit this URL to reset your password at DEJARIX: " + url,
                     $"<h2>DEJARIX Password Reset</h2><p>Click <a href='{url}'>here</a> to reset your password.</p>");
+                
+                response.EnsureSuccessStatusCode();
                 
                 ViewData["ForgotSuccess"] = "An email has been sent!";
             }

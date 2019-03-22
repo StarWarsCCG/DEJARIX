@@ -8,7 +8,7 @@ const cardSearchImage = $("#card-search-image");
 var starWarsCards = null;
 
 function areEqual(str1, str2) {
-    return String(str1).localeCompare(str2) == 0;
+    return String(str1).localeCompare(String(str2)) == 0;
 }
 
 function isCardType(card, primaryType, secondaryType) {
@@ -146,9 +146,9 @@ function doQuery() {
     $("#card-search-table-body tr").click(function(e) {
         cardSearchImage.empty();
         cardSearchImage.append(
-            '<img src="/images/cards/' +
+            '<img src="/images/cards/png-370x512/' +
             e.currentTarget.id +
-            '.jpg" alt="" />');
+            '.png" alt="" />');
         // console.log(e);
     });
     if (titleSearch) {

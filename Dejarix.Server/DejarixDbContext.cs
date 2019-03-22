@@ -35,6 +35,7 @@ namespace Dejarix.Server
     {
         [Key] public Guid Id { get; set; }
         public Guid OtherId { get; set; }
+        public bool IsLightSide { get; set; }
         public bool IsFront { get; set; }
         public string Title { get; set; }
         public string TitleNormalized { get; set; }
@@ -51,24 +52,26 @@ namespace Dejarix.Server
         public DateTimeOffset? DeletionDate { get; set; }
         public Guid CreatorId { get; set; }
         public DejarixUser Creator { get; set; }
-        public Guid CardCollectionId { get; set; }
-        public CardCollection CardCollection { get; set; }
+        public Guid RevisionId { get; set; }
+        public DeckRevision Revision { get; set; }
     }
 
-    public class CardCollection
+    public class DeckRevision
     {
         [Key] public Guid Id { get; set; }
         public Guid? ParentId { get; set; }
-        public CardCollection Parent { get; set; }
+        public DeckRevision Parent { get; set; }
         public DateTimeOffset CreationDate { get; set; }
+        public Guid CreatorId { get; set; }
+        public DejarixUser Creator { get; set; }
         public string Title { get; set; }
         public string Description { get; set; }
     }
 
-    public class CardInCollection
+    public class CardInDeckRevision
     {
         public Guid CardCollectionId { get; set; }
-        public CardCollection CardCollection { get; set; }
+        public DeckRevision CardCollection { get; set; }
         public Guid CardId { get; set; }
         public CardImage Card { get; set; }
         public int StartCount { get; set; }
@@ -80,9 +83,9 @@ namespace Dejarix.Server
     {
         public DbSet<CardImage> CardImages { get; set; }
         public DbSet<Deck> Decks { get; set; }
-        public DbSet<CardCollection> CardCollections { get; set; }
-        public DbSet<CardInCollection> CardsInCollections { get; set; }
-        public DbSet<CardInventory> OwnedCards { get; set; }
+        public DbSet<DeckRevision> DeckRevisions { get; set; }
+        public DbSet<CardInDeckRevision> CardsInDeckRevisions { get; set; }
+        public DbSet<CardInventory> CardInventories { get; set; }
 
         public DejarixDbContext(
             DbContextOptions<DejarixDbContext> options) : base(options)
@@ -91,8 +94,13 @@ namespace Dejarix.Server
 
         public void SeedData(string path)
         {
-            var text = File.ReadAllText(path);
-            var json = JArray.Parse(text);
+            JArray json;
+            
+            using (var textReader = new StreamReader(path))
+            using (var jsonReader = new JsonTextReader(textReader))
+            {
+                json = JArray.Load(jsonReader);
+            }
 
             foreach (JObject cardJson in json)
             {
@@ -100,6 +108,7 @@ namespace Dejarix.Server
                 {
                     Id = Guid.Parse((string)cardJson["ImageId"]),
                     OtherId = Guid.Parse((string)cardJson["OtherImageId"]),
+                    IsLightSide = (bool)cardJson["IsLightSide"],
                     IsFront = (bool)cardJson["IsFront"],
                     Title = (string)cardJson["CardName"],
                     Destiny = (string)cardJson["Destiny"],
@@ -127,24 +136,32 @@ namespace Dejarix.Server
             builder.Entity<CardInventory>().HasOne(co => co.CardImage);
 
             builder
-                .Entity<CardCollection>()
+                .Entity<DeckRevision>()
                 .HasOne(cc => cc.Parent)
                 .WithMany()
                 .OnDelete(DeleteBehavior.SetNull);
 
-            builder.Entity<CardInCollection>().HasKey(dc => new{dc.CardCollectionId, dc.CardId});
-            builder.Entity<CardInCollection>().HasOne(dc => dc.CardCollection);
-            builder.Entity<CardInCollection>().HasOne(dc => dc.Card);
+            builder.Entity<CardInDeckRevision>().HasKey(dc => new{dc.CardCollectionId, dc.CardId});
+            builder.Entity<CardInDeckRevision>().HasOne(dc => dc.CardCollection);
+            builder.Entity<CardInDeckRevision>().HasOne(dc => dc.Card);
 
             builder
                 .Entity<Deck>()
-                .HasOne(d => d.CardCollection)
+                .HasOne(d => d.Revision)
                 .WithMany()
                 .OnDelete(DeleteBehavior.Restrict);
             
             builder
                 .Entity<Deck>()
-                .HasOne(d => d.Creator);
+                .HasOne(d => d.Creator)
+                .WithMany()
+                .OnDelete(DeleteBehavior.Cascade);
+            
+            builder
+                .Entity<DeckRevision>()
+                .HasOne(dr => dr.Creator)
+                .WithMany()
+                .OnDelete(DeleteBehavior.SetNull);
         }
     }
 }

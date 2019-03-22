@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
@@ -9,27 +11,25 @@ namespace Dejarix.Server
 {
     public class Mailgun
     {
-        public const string ClientName = "Mailgun";
-
-        public static string GetApiKey(IConfiguration configuration)
-        {
-            var apiKey = configuration["Mailgun:ApiKey"];
-            var secret = "api:" + apiKey;
-            var bytes = Encoding.UTF8.GetBytes(secret);
-            var base64 = Convert.ToBase64String(bytes);
-
-            return base64;
-        }
-
-        private readonly IHttpClientFactory _factory;
+        private readonly HttpClient _httpClient;
         private readonly string _url;
 
         public Mailgun(
             IConfiguration configuration,
-            IHttpClientFactory factory)
+            HttpClient httpClient)
         {
-            _factory = factory;
             _url = configuration["Mailgun:Api"];
+            _httpClient = httpClient;
+
+            var apiKey = configuration["Mailgun:ApiKey"];
+            var secret = "api:" + apiKey;
+            var bytes = Encoding.UTF8.GetBytes(secret);
+            var base64 = Convert.ToBase64String(bytes);
+            
+            _httpClient.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue(
+                    "Basic",
+                    base64);
         }
 
         private static void AddRecipients(
@@ -39,14 +39,16 @@ namespace Dejarix.Server
         {
             if (recipients != null)
             {
-                var formattedRecipients = string.Join(", ", recipients);
+                var formattedRecipients = string.Join(
+                    ", ",
+                    recipients.Where(r => !string.IsNullOrWhiteSpace(r)));
 
                 if (formattedRecipients.Length > 0)
                     fields[key] = formattedRecipients;
             }
         }
 
-        public async Task SendEmailAsync(
+        public Task<HttpResponseMessage> SendEmailAsync(
             string from,
             IEnumerable<string> to,
             IEnumerable<string> cc,
@@ -72,9 +74,7 @@ namespace Dejarix.Server
                 fields["html"] = htmlBody;
             
             var content = new FormUrlEncodedContent(fields);
-            var client = _factory.CreateClient(ClientName);
-            var response = await client.PostAsync(_url, content);
-            response.EnsureSuccessStatusCode();
+            return _httpClient.PostAsync(_url, content);
         }
     }
 }

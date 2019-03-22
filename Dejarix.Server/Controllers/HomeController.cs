@@ -50,8 +50,8 @@ namespace Dejarix.Server.Controllers
                 else
                 {
                     ViewData["Title"] = card?.Title ?? "untitled card";
-                    ViewData["FrontImage"] = Url.Content($"~/images/cards/{card.Id}.jpg");
-                    ViewData["BackImage"] = Url.Content($"~/images/cards/{card.OtherId}.jpg");
+                    ViewData["FrontImage"] = Url.Content($"~/images/cards/png-370x512/{card.Id}.png");
+                    ViewData["BackImage"] = Url.Content($"~/images/cards/png-370x512/{card.OtherId}.png");
                     return View();
                 }
             }
