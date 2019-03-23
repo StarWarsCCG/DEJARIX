@@ -28,9 +28,16 @@ namespace Dejarix.Server
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddHttpClient<Mailgun>();
+            services.AddSingleton<DejarixLoggerProvider>();
+            services.AddHostedService<DejarixLoggerService>();
+
             var connectionString = Configuration.GetConnectionString("PrimaryDatabase");
-            services.AddDbContext<DejarixDbContext>(
-                options => options.UseNpgsql(connectionString));
+            services.AddDbContext<DejarixDbContext>(options =>
+            {
+                options.UseNpgsql(connectionString);
+                options.EnableSensitiveDataLogging();
+            });
+
             services
                 .AddIdentity<DejarixUser, IdentityRole<Guid>>(options =>
                 {
@@ -53,7 +60,6 @@ namespace Dejarix.Server
                 options.CheckConsentNeeded = context => true;
                 options.MinimumSameSitePolicy = SameSiteMode.None;
             });
-
 
             services.AddMvc();
         }

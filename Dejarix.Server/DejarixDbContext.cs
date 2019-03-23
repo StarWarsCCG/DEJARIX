@@ -1,16 +1,12 @@
 using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.IO;
-using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Npgsql.EntityFrameworkCore.PostgreSQL;
 
 namespace Dejarix.Server
 {
@@ -81,6 +77,8 @@ namespace Dejarix.Server
 
     public class DejarixDbContext : IdentityDbContext<DejarixUser, IdentityRole<Guid>, Guid>
     {
+        private readonly DejarixLoggerProvider _loggerProvider;
+
         public DbSet<CardImage> CardImages { get; set; }
         public DbSet<Deck> Decks { get; set; }
         public DbSet<DeckRevision> DeckRevisions { get; set; }
@@ -88,8 +86,10 @@ namespace Dejarix.Server
         public DbSet<CardInventory> CardInventories { get; set; }
 
         public DejarixDbContext(
+            DejarixLoggerProvider loggerProvider,
             DbContextOptions<DejarixDbContext> options) : base(options)
         {
+            _loggerProvider = loggerProvider;
         }
 
         public void SeedData(string path)
@@ -126,6 +126,10 @@ namespace Dejarix.Server
         protected override void OnConfiguring(DbContextOptionsBuilder builder)
         {
             base.OnConfiguring(builder);
+
+            var lf = new LoggerFactory();
+            lf.AddProvider(_loggerProvider);
+            builder.UseLoggerFactory(lf);
         }
 
         protected override void OnModelCreating(ModelBuilder builder)

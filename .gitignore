@@ -3,4 +3,5 @@
 bin/
 obj/
 appsettings.*
+ignore.me.*
 

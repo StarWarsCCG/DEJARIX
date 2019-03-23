@@ -32,8 +32,47 @@ namespace Dejarix.Server
                     base64);
         }
 
+        public Task<HttpResponseMessage> SendEmailAsync(Email email)
+        {
+            var fields = email.ToDictionary();
+            var content = new FormUrlEncodedContent(fields);
+            return _httpClient.PostAsync(_url, content);
+        }
+    }
+
+    public class Email
+    {
+        public string From { get; set; }
+        public string Subject { get; set; }
+        public string TextBody { get; set; }
+        public string HtmlBody { get; set; }
+        public IEnumerable<string> To { get; set; }
+        public IEnumerable<string> Cc { get; set; }
+        public IEnumerable<string> Bcc { get; set; }
+
+        public IDictionary<string, string> ToDictionary()
+        {
+            var result = new Dictionary<string, string>
+            {
+                ["from"] = From,
+                ["subject"] = Subject
+            };
+
+            AddRecipients(result, To, "to");
+            AddRecipients(result, Cc, "cc");
+            AddRecipients(result, Bcc, "bcc");
+
+            if (TextBody != null)
+                result["text"] = TextBody;
+            
+            if (HtmlBody != null)
+                result["html"] = HtmlBody;
+            
+            return result;
+        }
+
         private static void AddRecipients(
-            IDictionary<string, string> fields,
+            Dictionary<string, string> fields,
             IEnumerable<string> recipients,
             string key)
         {
@@ -46,35 +85,6 @@ namespace Dejarix.Server
                 if (formattedRecipients.Length > 0)
                     fields[key] = formattedRecipients;
             }
-        }
-
-        public Task<HttpResponseMessage> SendEmailAsync(
-            string from,
-            IEnumerable<string> to,
-            IEnumerable<string> cc,
-            IEnumerable<string> bcc,
-            string subject,
-            string textBody,
-            string htmlBody)
-        {
-            var fields = new Dictionary<string, string>
-            {
-                ["from"] = from,
-                ["subject"] = subject
-            };
-
-            AddRecipients(fields, to, "to");
-            AddRecipients(fields, cc, "cc");
-            AddRecipients(fields, bcc, "bcc");
-
-            if (textBody != null)
-                fields["text"] = textBody;
-            
-            if (htmlBody != null)
-                fields["html"] = htmlBody;
-            
-            var content = new FormUrlEncodedContent(fields);
-            return _httpClient.PostAsync(_url, content);
         }
     }
 }

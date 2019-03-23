@@ -68,16 +68,20 @@ namespace Dejarix.Server.Controllers
                 var bytes = Encoding.UTF8.GetBytes(token);
                 var hexToken = bytes.ToHex();
                 var url = $"{_linkHost}/Account/Confirm?userId={user.Id}&token={hexToken}";
-                var response = await _mailgun.SendEmailAsync(
-                    _sender,
-                    user.Email.Yield(),
-                    null,
-                    _bcc?.Yield(),
-                    $"Confirm {user.Email} on DEJARIX",
-                    "Visit this URL to confirm your email address at DEJARIX: " + url,
-                    $"<h2>DEJARIX Registration</h2><p>Click <a href='{url}'>here</a> to confirm your email address.</p>");
-                
+                var email = new Email
+                {
+                    From = _sender,
+                    To = user.Email.Yield(),
+                    Bcc = _bcc?.Yield(),
+                    Subject = $"Confirm {user.Email} on DEJARIX",
+                    TextBody = "Visit this URL to confirm your email address at DEJARIX: " + url,
+                    HtmlBody = $"<h2>DEJARIX Registration</h2><p>Click <a href='{url}'>here</a> to confirm your email address.</p>"
+                };
+
+                var response = await _mailgun.SendEmailAsync(email);
                 response.EnsureSuccessStatusCode();
+
+                var content = await response.Content.ReadAsStringAsync();
                 
                 ViewData["RegistrationSuccess"] = $"Registration successful! Check {user.Email} for your confirmation link!";
                 return View("Register");
@@ -184,15 +188,17 @@ namespace Dejarix.Server.Controllers
                 var bytes = Encoding.UTF8.GetBytes(token);
                 var hexToken = bytes.ToHex();
                 var url = $"{_linkHost}/Account/Reset?userId={user.Id}&token={hexToken}";
-                var response = await _mailgun.SendEmailAsync(
-                    _sender,
-                    user.Email.Yield(),
-                    null,
-                    _bcc?.Yield(),
-                    $"DEJARIX - Reset password for {user.UserName}",
-                    "Visit this URL to reset your password at DEJARIX: " + url,
-                    $"<h2>DEJARIX Password Reset</h2><p>Click <a href='{url}'>here</a> to reset your password.</p>");
+                var email = new Email
+                {
+                    From = _sender,
+                    To = user.Email.Yield(),
+                    Bcc = _bcc?.Yield(),
+                    Subject = $"DEJARIX - Reset password for {user.UserName}",
+                    TextBody = "Visit this URL to reset your password at DEJARIX: " + url,
+                    HtmlBody = $"<h2>DEJARIX Password Reset</h2><p>Click <a href='{url}'>here</a> to reset your password.</p>"
+                };
                 
+                var response = await _mailgun.SendEmailAsync(email);
                 response.EnsureSuccessStatusCode();
                 
                 ViewData["ForgotSuccess"] = "An email has been sent!";
