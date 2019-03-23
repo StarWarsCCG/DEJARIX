@@ -6,6 +6,9 @@ const cardSearchMessage = $("#card-search-message");
 const cardSearchButton = $("#card-search-button");
 const cardSearchImage = $("#card-search-image");
 var starWarsCards = null;
+var activeCardFront = null;
+var activeCardBack = null;
+var debuggery = null;
 
 function areEqual(str1, str2) {
     return String(str1).localeCompare(String(str2)) == 0;
@@ -130,6 +133,10 @@ function doQuery() {
         htmlResults.push(
             '<tr id="' +
             item.ImageId +
+            '" data-front-id="' +
+            item.ImageId +
+            '" data-back-id="' +
+            item.OtherImageId +
             '"><td><img src="/images/expansions/' +
             item.Expansion.replace('#', '') +
             '.png?v=2" title="' +
@@ -144,12 +151,23 @@ function doQuery() {
 
     cardSearchTableBody.append(htmlResults.join(''));
     $("#card-search-table-body tr").click(function(e) {
+        // debuggery = e;
+        activeCardFront = e.currentTarget.dataset.frontId;
+        activeCardBack = e.currentTarget.dataset.backId;
         cardSearchImage.empty();
         cardSearchImage.append(
-            '<img src="/images/cards/png-370x512/' +
-            e.currentTarget.id +
+            '<img id="card-search-preview" src="/images/cards/png-370x512/' +
+            activeCardFront +
             '.png" alt="" />');
         // console.log(e);
+
+        $('#card-search-preview').click(function(ee) {
+            const swapValue = activeCardFront;
+            activeCardFront = activeCardBack;
+            activeCardBack = swapValue;
+
+            ee.currentTarget.src = '/images/cards/png-370x512/' + activeCardFront + '.png';
+        });
     });
     if (titleSearch) {
     } else {
