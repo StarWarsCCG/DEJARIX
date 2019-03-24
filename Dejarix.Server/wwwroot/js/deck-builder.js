@@ -5,10 +5,19 @@ const cardSearchTableBody = $("#card-search-table-body");
 const cardSearchMessage = $("#card-search-message");
 const cardSearchButton = $("#card-search-button");
 const cardSearchImage = $("#card-search-image");
+const cardSearchModal = $('#card-search-modal');
+const cardDeckTableBody = $('#card-deck-table-body');
+const cardsById = {};
 var starWarsCards = null;
 var activeCardFront = null;
 var activeCardBack = null;
 var debuggery = null;
+
+const currentDeck = {
+    objective: null,
+    insideCards: [],
+    outsideCards: []
+};
 
 // https://stackoverflow.com/a/12034334
 var entityMap = {
@@ -38,6 +47,18 @@ function isCardType(card, primaryType, secondaryType) {
 
 function compareByName(card1, card2) {
     return card1.CardName.localeCompare(card2.CardName);
+}
+
+function getFrontId(card) {
+    return card.IsFront ? card.ImageId : card.OtherImageId;
+}
+
+function getExpansionImage(card) {
+    return '<img src="/images/expansions/' +
+        card.Expansion.replace('#', '') +
+        '.png?v=2" title="' +
+        card.Expansion +
+        '" alt="" />';
 }
 
 const typeFilterMap = {
@@ -73,6 +94,8 @@ const typeFilterMap = {
     "location-site": c => isCardType(c, "Location", "Site"),
     "location-system": c => isCardType(c, "Location", "System"),
     "objective": c => areEqual(c.PrimaryType, "Objective"),
+    "objective-front": c => areEqual(c.PrimaryType, "Objective") && c.IsFront,
+    "objective-back": c => areEqual(c.PrimaryType, "Objective") && !c.IsFront,
     "podracer": c => areEqual(c.PrimaryType, "Podracer"),
     "starship": c => areEqual(c.PrimaryType, "Starship"),
     "starship-capital": c => isCardType(c, "Starship", "Capital"),
@@ -140,6 +163,12 @@ function doQuery() {
         results.pop();
         cardSearchMessage.addClass("alert alert-warning");
         cardSearchMessage.text("Results limited to 100.");
+    } else if (results.length == 0) {
+        cardSearchMessage.addClass("alert alert-warning");
+        cardSearchMessage.text("No results.");
+    } else {
+        cardSearchMessage.addClass("alert alert-success");
+        cardSearchMessage.text(results.length + " results.");
     }
 
     results.sort(compareByName);
@@ -156,19 +185,23 @@ function doQuery() {
             item.ImageId +
             '" data-back-id="' +
             item.OtherImageId +
-            '"><td><img src="/images/expansions/' +
-            item.Expansion.replace('#', '') +
-            '.png?v=2" title="' +
-            item.Expansion +
-            '" alt="" /></td><td>' +
+            '"><td>' +
+            getExpansionImage(item) +
+            '</td><td>' +
             fullTitle +
-            '</td><td class="text-sm-right">' +
+            '</td><td class="card-search-destiny">' +
             item.Destiny +
-            '</td></tr>');
+            '</td><td class="text-sm-right"><button data-front-id="' +
+            item.ImageId +
+            '" data-back-id="' +
+            item.OtherImageId +
+            '" type="button" class="btn btn-secondary btn-sm card-preview">🔍</button> <button data-front-id="' +
+            item.ImageId +
+            '" type="button" class="btn btn-primary btn-sm card-add">▶</button></td></tr>');
     });
 
     cardSearchTableBody.append(htmlResults.join(''));
-    $("#card-search-table-body tr").click(function(e) {
+    $("#card-search-table-body .card-preview").click(function(e) {
         // debuggery = e;
         const data = e.currentTarget.dataset;
         activeCardFront = data.frontId;
@@ -178,7 +211,7 @@ function doQuery() {
             '<img id="card-search-preview" src="/images/cards/png-370x512/' +
             activeCardFront +
             '.png" alt="" />');
-        // console.log(e);
+        cardSearchModal.modal({keyboard:true,focus:true,show:true});
 
         $('#card-search-preview').click(function(ee) {
             const swapValue = activeCardFront;
@@ -188,6 +221,27 @@ function doQuery() {
             ee.currentTarget.src = '/images/cards/png-370x512/' + activeCardFront + '.png';
         });
     });
+
+    $("#card-search-table-body .card-add").click(function (e) {
+        let id = e.currentTarget.dataset.frontId;
+        let card = cardsById[id];
+        
+        if (!card.IsFront) {
+            id = card.OtherImageId;
+            card = cardsById[id];
+        }
+
+        const uniqueness = card.hasOwnProperty("Uniqueness") ? card.Uniqueness : '';
+        const fullTitle = escapeHtml(uniqueness + card.CardName);
+
+        cardDeckTableBody.append(
+            '<tr><td>' +
+            getExpansionImage(card) +
+            '</td><td>' +
+            fullTitle +
+            '</td></tr>');
+    });
+
     if (titleSearch) {
     } else {
         // cardSearchMessage.addClass("alert alert-warning");
@@ -212,12 +266,15 @@ $.ajax({
     url: "/ScompLink/AllCards",
     success: function(result) {
         starWarsCards = result;
+        starWarsCards.forEach(item => cardsById[item.ImageId] = item);
         cardSearchButton.removeAttr("disabled");
 
+        cardSearchMessage.removeClass();
         cardSearchMessage.addClass("alert alert-success");
         cardSearchMessage.text("Database loaded.");
     },
     error: function() {
+        cardSearchMessage.removeClass();
         cardSearchMessage.addClass("alert alert-danger");
         cardSearchMessage.text("Error retrieving card database.");
     }

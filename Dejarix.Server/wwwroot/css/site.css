@@ -62,7 +62,20 @@ body {
   display: none;
 }
 
-#card-search-table-body tr
+#card-search-table th
 {
-  cursor: pointer;
+  padding-right: 1em;
 }
+
+#card-search-table input,
+#card-search-table select
+{
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.card-search-destiny
+{
+  color: #404040;
+}
+
