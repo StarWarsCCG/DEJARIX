@@ -10,6 +10,24 @@ var activeCardFront = null;
 var activeCardBack = null;
 var debuggery = null;
 
+// https://stackoverflow.com/a/12034334
+var entityMap = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+    '/': '&#x2F;',
+    '`': '&#x60;',
+    '=': '&#x3D;'
+};
+  
+function escapeHtml (string) {
+    return String(string).replace(/[&<>"'`=\/]/g, function (s) {
+        return entityMap[s];
+    });
+}
+
 function areEqual(str1, str2) {
     return String(str1).localeCompare(String(str2)) == 0;
 }
@@ -130,6 +148,7 @@ function doQuery() {
 
     results.forEach(function(item) {
         const uniqueness = item.hasOwnProperty("Uniqueness") ? item.Uniqueness : '';
+        const fullTitle = escapeHtml(uniqueness + item.CardName);
         htmlResults.push(
             '<tr id="' +
             item.ImageId +
@@ -142,8 +161,7 @@ function doQuery() {
             '.png?v=2" title="' +
             item.Expansion +
             '" alt="" /></td><td>' +
-            uniqueness +
-            item.CardName +
+            fullTitle +
             '</td><td class="text-sm-right">' +
             item.Destiny +
             '</td></tr>');
@@ -152,8 +170,9 @@ function doQuery() {
     cardSearchTableBody.append(htmlResults.join(''));
     $("#card-search-table-body tr").click(function(e) {
         // debuggery = e;
-        activeCardFront = e.currentTarget.dataset.frontId;
-        activeCardBack = e.currentTarget.dataset.backId;
+        const data = e.currentTarget.dataset;
+        activeCardFront = data.frontId;
+        activeCardBack = data.backId;
         cardSearchImage.empty();
         cardSearchImage.append(
             '<img id="card-search-preview" src="/images/cards/png-370x512/' +

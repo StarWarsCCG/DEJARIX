@@ -33,6 +33,7 @@ namespace Dejarix.Server
 
         public void Dispose()
         {
+            _channel.Writer.TryComplete();
         }
     }
 
@@ -51,9 +52,11 @@ namespace Dejarix.Server
                 using (var writer = new StreamWriter(path, true))
                 {
                     while (reader.TryRead(out string item))
-                    {
                         await writer.WriteLineAsync(item);
-                    }
+
+                    await writer.FlushAsync();
+                    long logSize = writer.BaseStream.Position;
+                    // TODO: Alert on large log file size.
                 }
             }
         }
@@ -71,6 +74,7 @@ namespace Dejarix.Server
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
+            _provider.Dispose();
             return _task ?? Task.CompletedTask;
         }
     }

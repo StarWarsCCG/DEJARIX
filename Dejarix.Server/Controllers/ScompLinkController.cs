@@ -8,6 +8,7 @@ using Dejarix.Server.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Dejarix.Server.Controllers
 {
@@ -18,6 +19,22 @@ namespace Dejarix.Server.Controllers
         public ScompLinkController(IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
+        }
+
+        [Authorize]
+        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+        public IActionResult ServerStatus()
+        {
+            if (!User.Identity.IsAuthenticated)
+                return Unauthorized();
+                
+            return Json(new
+            {
+                UtcStartupTime = Startup.UtcStartupTime.ToString("s"),
+                UtcNow = DateTime.UtcNow.ToString("s"),
+                GcMemory = GC.GetTotalMemory(false),
+                WorkingSet = Process.GetCurrentProcess().WorkingSet64
+            });
         }
 
         public async Task<IActionResult> Cards(string title)

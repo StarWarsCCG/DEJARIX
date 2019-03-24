@@ -17,6 +17,8 @@ namespace Dejarix.Server
 {
     public class Startup
     {
+        public static DateTime UtcStartupTime { get; private set; }
+
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -96,8 +98,8 @@ namespace Dejarix.Server
                 // app.UseHttpsRedirection();
             }
 
-            app.UseAuthentication();
             app.UseStaticFiles();
+            app.UseAuthentication();
             app.UseCookiePolicy();
 
             app.UseMvc(routes =>
@@ -106,6 +108,8 @@ namespace Dejarix.Server
                     name: "default",
                     template: "{controller=Home}/{action=Index}/{id?}");
             });
+
+            UtcStartupTime = DateTime.UtcNow;
         }
     }
 }
