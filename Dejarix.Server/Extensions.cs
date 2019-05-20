@@ -59,7 +59,7 @@ namespace Dejarix.Server
             yield return value;
         }
 
-        public static string SearchNormalized(this string text)
+        public static string NormalizedForSearch(this string text)
         {
             if (text == null)
                 return null;

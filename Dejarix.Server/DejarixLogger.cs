@@ -44,8 +44,8 @@ namespace Dejarix.Server
 
         private async Task ConsumeAsync()
         {
-            string now = DateTime.Now.ToString("s");
-            string path = $"ignore.me.sql-{now}.txt";
+            string now = DateTime.Now.ToString("s").Replace(':', '.');
+            string path = $"ignore.me.sql.{now}.txt";
             var reader = _provider.Reader;
             while (await reader.WaitToReadAsync())
             {

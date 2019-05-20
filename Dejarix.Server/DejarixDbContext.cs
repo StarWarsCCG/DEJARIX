@@ -1,78 +1,62 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Dejarix.Server
 {
-    public class DejarixUser : IdentityUser<Guid>
+    public static class DejarixExtensions
     {
-        public DateTimeOffset RegistrationDate { get; set; }
-    }
+        public static DejarixDbContext GetDbContext(this ControllerBase controller)
+        {
+            return controller
+                .HttpContext
+                .RequestServices
+                .GetService<DejarixDbContext>();
+        }
 
-    public class CardInventory
-    {
-        public Guid UserId { get; set; }
-        public DejarixUser User { get; set; }
-        public Guid CardImageId { get; set; }
-        public CardImage CardImage { get; set; }
-        public int PublicHaveCount { get; set; }
-        public int PublicWantCount { get; set; }
-        public int PrivateHaveCount { get; set; }
-        public int PrivateWantCount { get; set; }
-    }
+        public static IApplicationBuilder UseDejarixExceptionLogger(
+            this IApplicationBuilder builder)
+        {
+            return builder.Use(next =>
+            {
+                return async context =>
+                {
+                    try
+                    {
+                        await next(context);
+                    }
+                    catch (Exception exception)
+                    {
+                        try
+                        {
+                            using (var dbContext = context.RequestServices.GetService<DejarixDbContext>())
+                                await dbContext.LogAsync(exception);
+                        }
+                        catch (Exception dbException)
+                        {
+                            for (var e = dbException; e != null; e = e.InnerException)
+                            {
+                                Console.WriteLine(e.GetType());
+                                Console.WriteLine(e.Message);
+                                Console.WriteLine(e.StackTrace);
+                            }
+                        }
 
-    public class CardImage
-    {
-        [Key] public Guid Id { get; set; }
-        public Guid OtherId { get; set; }
-        public bool IsLightSide { get; set; }
-        public bool IsFront { get; set; }
-        public string Title { get; set; }
-        public string TitleNormalized { get; set; }
-        public string Destiny { get; set; }
-        public string Expansion { get; set; }
-        public string InfoJson { get; set; }
-    }
-
-    public class Deck
-    {
-        [Key] public Guid Id { get; set; }
-        public bool IsPublic { get; set; }
-        public DateTimeOffset CreationDate { get; set; }
-        public DateTimeOffset? DeletionDate { get; set; }
-        public Guid CreatorId { get; set; }
-        public DejarixUser Creator { get; set; }
-        public Guid RevisionId { get; set; }
-        public DeckRevision Revision { get; set; }
-    }
-
-    public class DeckRevision
-    {
-        [Key] public Guid Id { get; set; }
-        public Guid? ParentId { get; set; }
-        public DeckRevision Parent { get; set; }
-        public DateTimeOffset CreationDate { get; set; }
-        public Guid CreatorId { get; set; }
-        public DejarixUser Creator { get; set; }
-        public string Title { get; set; }
-        public string Description { get; set; }
-    }
-
-    public class CardInDeckRevision
-    {
-        public Guid CardCollectionId { get; set; }
-        public DeckRevision CardCollection { get; set; }
-        public Guid CardId { get; set; }
-        public CardImage Card { get; set; }
-        public int StartCount { get; set; }
-        public int CardCount { get; set; }
-        public int OutsideCount { get; set; }
+                        throw;
+                    }
+                };
+            });
+        }
     }
 
     public class DejarixDbContext : IdentityDbContext<DejarixUser, IdentityRole<Guid>, Guid>
@@ -84,6 +68,7 @@ namespace Dejarix.Server
         public DbSet<DeckRevision> DeckRevisions { get; set; }
         public DbSet<CardInDeckRevision> CardsInDeckRevisions { get; set; }
         public DbSet<CardInventory> CardInventories { get; set; }
+        public DbSet<ExceptionLog> ExceptionLogs { get; set; }
 
         public DejarixDbContext(
             DejarixLoggerProvider loggerProvider,
@@ -116,7 +101,7 @@ namespace Dejarix.Server
                     InfoJson = cardJson.ToString(Formatting.Indented)
                 };
 
-                cardImage.TitleNormalized = cardImage.Title.SearchNormalized();
+                cardImage.TitleNormalized = cardImage.Title.NormalizedForSearch();
                 CardImages.Add(cardImage);
             }
 
@@ -135,6 +120,7 @@ namespace Dejarix.Server
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+            builder.Entity<ExceptionLog>().HasKey(el => new{el.Id, el.Ordinal});
             builder.Entity<CardInventory>().HasKey(co => new{co.UserId, co.CardImageId});
             builder.Entity<CardInventory>().HasOne(co => co.User);
             builder.Entity<CardInventory>().HasOne(co => co.CardImage);
@@ -166,6 +152,30 @@ namespace Dejarix.Server
                 .HasOne(dr => dr.Creator)
                 .WithMany()
                 .OnDelete(DeleteBehavior.SetNull);
+        }
+
+        public async Task LogAsync(Exception exception)
+        {
+            if (exception != null)
+            {
+                var rootLog = ExceptionLog.FromException(exception);
+                rootLog.Id = Guid.NewGuid();
+                rootLog.ExceptionDate = DateTimeOffset.Now;
+                await ExceptionLogs.AddAsync(rootLog);
+
+                int ordinal = 1;
+
+                for (var e = exception.InnerException; e != null; e = e.InnerException)
+                {
+                    var log = ExceptionLog.FromException(e);
+                    log.Id = rootLog.Id;
+                    log.Ordinal = ordinal++;
+                    log.ExceptionDate = rootLog.ExceptionDate;
+                    await ExceptionLogs.AddAsync(log);
+                }
+
+                await SaveChangesAsync();
+            }
         }
     }
 }

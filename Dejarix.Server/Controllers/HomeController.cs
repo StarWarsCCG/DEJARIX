@@ -11,13 +11,6 @@ namespace Dejarix.Server.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly IServiceProvider _serviceProvider;
-
-        public HomeController(IServiceProvider serviceProvider)
-        {
-            _serviceProvider = serviceProvider;
-        }
-
         public IActionResult Index()
         {
             return View();
@@ -35,7 +28,7 @@ namespace Dejarix.Server.Controllers
 
         public async Task<IActionResult> Card(Guid id)
         {
-            using (var context = _serviceProvider.GetService<DejarixDbContext>())
+            using (var context = this.GetDbContext())
             {
                 var card = await context.CardImages.FindAsync(id);
 
