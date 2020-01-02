@@ -2,6 +2,7 @@
 .vs/
 bin/
 obj/
+launchSettings.json
 appsettings.*
 ignore.me.*
 
