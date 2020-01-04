@@ -1,0 +1,9 @@
+@model Dejarix.App.Models.ConfirmViewModel
+
+@{
+    ViewData["Title"] = "Confirm Email";
+}
+
+<h1>Email Confirmation</h1>
+<div class="alert alert-success">Email confirmed for @Model.UserName (@Model.UserEmail)!</div>
+<p>Now you are able to <a asp-area="" asp-controller="Account" asp-action="SignIn">sign in</a>!</p>

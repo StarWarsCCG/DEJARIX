@@ -31,9 +31,9 @@ namespace Dejarix.App.Controllers
         public IActionResult SignIn()
         {
             if (User.Identity.IsAuthenticated)
-                return Redirect("/");
+                return RedirectToAction(nameof(HomeController.Index), "Home");
             else
-                return View();
+                return View(new SignInViewModel());
         }
 
         [HttpPost("sign-in")]
@@ -45,21 +45,40 @@ namespace Dejarix.App.Controllers
             var formData = await request.ReadFormAsync();
             var signInUser = formData["sign-in-user"].First();
             var signInPass = formData["sign-in-pass"].First();
-            var user = signInUser.Contains('@') ?
+            bool isEmail = signInUser.Contains('@');
+            var user = isEmail ?
                 await _userManager.FindByEmailAsync(signInUser) :
                 await _userManager.FindByNameAsync(signInUser);
+            
+            if (user is null)
+            {
+                var word = isEmail ? "email" : "user";
+                var model = new SignInViewModel
+                {
+                    PreviousUserName = signInUser,
+                    Error = $"Unrecognized {word}: {signInUser}"
+                };
+
+                return View(nameof(SignIn), model);
+            }
+
             var passwordResult = await _signInManager.CheckPasswordSignInAsync(
                 user, signInPass, false);
             
             if (passwordResult.Succeeded)
             {
                 await _signInManager.SignInAsync(user, true);
-                return Redirect("/");
+                return RedirectToAction(nameof(HomeController.Index), "Home");
             }
             else
             {
-                ViewData["SignInError"] = "Failed to sign in.";
-                return View(nameof(SignIn));
+                var model = new SignInViewModel
+                {
+                    PreviousUserName = signInUser,
+                    Error = "Incorrect password."
+                };
+
+                return View(nameof(SignIn), model);
             }
         }
 
@@ -69,14 +88,14 @@ namespace Dejarix.App.Controllers
         public async Task<IActionResult> SignOut()
         {
             await _signInManager.SignOutAsync();
-            return Redirect("/");
+            return RedirectToAction(nameof(HomeController.Index), "Home");
         }
         
         [HttpGet("register")]
         public IActionResult Register()
         {
             if (User.Identity.IsAuthenticated)
-                return Redirect("/");
+                return RedirectToAction(nameof(HomeController.Index), "Home");
             else
                 return View(new RegisterViewModel());
         }
@@ -98,7 +117,7 @@ namespace Dejarix.App.Controllers
 
             var model = new RegisterViewModel
             {
-                PreviousUsername = user.UserName,
+                PreviousUserName = user.UserName,
                 PreviousEmail = user.Email
             };
 
@@ -124,8 +143,10 @@ namespace Dejarix.App.Controllers
                 var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
                 var bytes = Encoding.UTF8.GetBytes(token);
                 var hexToken = bytes.ToHex();
-                var host = request.Scheme + "://" + request.Host;
+
+                // https://stackoverflow.com/a/38311283
                 var path = Url.Action(nameof(Confirm), new { userId = user.Id, token = hexToken });
+                var host = request.Scheme + "://" + request.Host;
                 var url = host + path;
                 var email = new Email
                 {
@@ -165,17 +186,22 @@ namespace Dejarix.App.Controllers
             var user = await _userManager.FindByIdAsync(userId.ToString());
 
             if (user is null)
-                return Redirect("/");
+                return RedirectToAction(nameof(HomeController.Index), "Home");
 
             var result = await _userManager.ConfirmEmailAsync(user, trueToken);
 
             if (result.Succeeded)
             {
-                ViewData["ConfirmedUser"] = user;
-                return View();
+                var model = new ConfirmViewModel
+                {
+                    UserName = user.UserName,
+                    UserEmail = user.Email
+                };
+
+                return View(model);
             }
 
-            return Redirect("/");
+            return RedirectToAction(nameof(HomeController.Index), "Home");
         }
     }
 }

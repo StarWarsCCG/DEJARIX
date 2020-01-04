@@ -20,7 +20,7 @@
 <form method="post" enctype="application/x-www-form-urlencoded">
     @Html.AntiForgeryToken()
     <div class="form-group">
-        <input type="text" name="register-username" placeholder="Username" value="@Model.PreviousUsername" />
+        <input type="text" name="register-username" placeholder="Username" value="@Model.PreviousUserName" />
     </div>
     <div class="form-group">
         <input type="email" name="register-email" placeholder="Email Address" value="@Model.PreviousEmail" />

@@ -1,6 +1,23 @@
-﻿@{
+﻿@model Dejarix.App.Models.SignInViewModel
+
+@{
     ViewData["Title"] = "Sign In";
 }
 <h1>@ViewData["Title"]</h1>
 
-<p>Sign In</p>
+@if (Model.Error.Length > 0)
+{
+    <div class="alert alert-danger">@Model.Error</div>
+}
+
+<form method="post" enctype="application/x-www-form-urlencoded">
+    <div class="form-group">
+        <input type="text" id="sign-in-user" name="sign-in-user" placeholder="Username or Email Address" value="@Model.PreviousUserName" />
+    </div>
+    <div class="form-group">
+        <input type="password" id="sign-in-pass" name="sign-in-pass" placeholder="Password" />
+    </div>
+    <button type="submit" class="btn btn-primary">Sign In</button>
+</form>
+<p><a asp-area="" asp-controller="Account" asp-action="Forgot">Forgot your password?</a></p>
+

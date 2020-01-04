@@ -11,19 +11,18 @@ namespace Dejarix.App
 
         public static string ToHex(this byte[] bytes)
         {
-            var result = new char[bytes.Length * 2];
-
-            int index = 0;
-            foreach (var b in bytes)
+            return string.Create(bytes.Length * 2, bytes, (span, state) =>
             {
-                int firstDigit = (b >> 4) & 0x0f;
-                int secondDigit = b & 0x0f;
+                int index = 0;
+                foreach (var b in state)
+                {
+                    int firstDigit = (b >> 4) & 0x0f;
+                    int secondDigit = b & 0x0f;
 
-                result[index++] = HexDigits[firstDigit];
-                result[index++] = HexDigits[secondDigit];
-            }
-
-            return new string(result);
+                    span[index++] = HexDigits[firstDigit];
+                    span[index++] = HexDigits[secondDigit];
+                }
+            });
         }
 
         private static int FromHex(char c)
