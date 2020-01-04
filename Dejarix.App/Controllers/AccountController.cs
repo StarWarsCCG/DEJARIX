@@ -203,5 +203,126 @@ namespace Dejarix.App.Controllers
 
             return RedirectToAction(nameof(HomeController.Index), "Home");
         }
+
+        [HttpGet("forgot")]
+        public IActionResult Forgot()
+        {
+            if (User.Identity.IsAuthenticated)
+                return RedirectToAction(nameof(HomeController.Index), "Home");
+            
+            return View(new ForgotViewModel());
+        }
+
+        [HttpPost("forgot")]
+        [Consumes("application/x-www-form-urlencoded")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ForgotPost([FromServices] Mailgun mailgun)
+        {
+            var request = HttpContext.Request;
+            var formData = await request.ReadFormAsync();
+            var forgotUser = formData["forgot-user"].FirstOrDefault() ?? string.Empty;
+
+            bool isEmail = forgotUser.Contains('@');
+            var user = isEmail ?
+                await _userManager.FindByEmailAsync(forgotUser) :
+                await _userManager.FindByNameAsync(forgotUser);
+            
+            var model = new ForgotViewModel { PreviousUserName = forgotUser };
+            
+            if (user is null)
+            {
+                var word = isEmail ? "email" : "user";
+                model.Error = $"Unable to find user associated with '{forgotUser}'.";
+            }
+            else
+            {
+                var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+                var bytes = Encoding.UTF8.GetBytes(token);
+                var hexToken = bytes.ToHex();
+                // https://stackoverflow.com/a/38311283
+                var path = Url.Action(nameof(Reset), new { userId = user.Id, token = hexToken });
+                var host = request.Scheme + "://" + request.Host;
+                var url = host + path;
+                var email = new Email
+                {
+                    From = mailgun.DefaultSender,
+                    To = new string[] {user.Email},
+                    Bcc = mailgun.DefaultBcc,
+                    Subject = $"DEJARIX - Reset password for {user.UserName}",
+                    TextBody = "Visit this URL to reset your password at DEJARIX: " + url,
+                    HtmlBody = $"<h2>DEJARIX Password Reset</h2><p>Click <a href='{url}'>here</a> to reset your password.</p>"
+                };
+                
+                var response = await mailgun.SendEmailAsync(email);
+                response.EnsureSuccessStatusCode();
+                
+                model.Success = "An email has been sent!";
+            }
+
+            return View(model);
+        }
+
+        [HttpGet("reset")]
+        public IActionResult Reset(Guid userId, string token)
+        {
+            var bytes = token.AsHex();
+            var trueToken = Encoding.UTF8.GetString(bytes);
+
+            var model = new ResetViewModel
+            {
+                UserId = userId,
+                Token = trueToken
+            };
+
+            return View(model);
+        }
+
+        [HttpPost("reset")]
+        [Consumes("application/x-www-form-urlencoded")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResetPost()
+        {
+            var request = HttpContext.Request;
+            var formData = await request.ReadFormAsync();
+            var textUserId = formData["reset-user-id"].FirstOrDefault();
+            var token = formData["reset-token"].FirstOrDefault();
+            var password = formData["reset-password"].FirstOrDefault();
+            var confirmPassword = formData["reset-password-confirm"].FirstOrDefault();
+
+            var model = new ResetViewModel
+            {
+                UserId = Guid.Parse(textUserId),
+                Token = token
+            };
+
+            if (password != confirmPassword)
+            {
+                model.Errors = new string[]{"Passwords do not match."};
+            }
+            else
+            {
+                var user = await _userManager.FindByIdAsync(textUserId);
+
+                if (user is null)
+                {
+                    model.Errors = new string[]{"Unrecognized user ID."};
+                }
+                else
+                {
+                    var result = await _userManager.ResetPasswordAsync(user, token, password);
+
+                    if (result.Succeeded)
+                    {
+                        model.Success = "Password successfully reset!";
+                    }
+                    else
+                    {
+                        model.Errors = result.Errors.Select(e => e.Description).ToArray();
+                    }
+                }
+            }
+            
+            return View(model);
+        }
     }
 }
