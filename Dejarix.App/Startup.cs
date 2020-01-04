@@ -26,6 +26,8 @@ namespace Dejarix.App
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddHttpClient<Mailgun>();
+            
             var connectionString = Configuration.GetConnectionString("PrimaryDatabase");
             services.AddDbContext<DejarixDbContext>(options =>
             {
@@ -75,7 +77,7 @@ namespace Dejarix.App
                     // Seed important data!
                     var seedFile = Configuration["SeedFile"];
                     if (!string.IsNullOrEmpty(seedFile))
-                        context.SeedData(seedFile);
+                        context.SeedDataAsync(seedFile).GetAwaiter().GetResult();
                 }
             }
 
@@ -85,7 +87,7 @@ namespace Dejarix.App
             }
             else
             {
-                app.UseExceptionHandler("/Home/Error");
+                app.UseExceptionHandler("/error");
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 // app.UseHsts();
             }

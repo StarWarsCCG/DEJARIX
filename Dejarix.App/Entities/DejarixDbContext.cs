@@ -22,12 +22,12 @@ namespace Dejarix.App.Entities
         {
         }
 
-        public void SeedData(string path)
+        public async Task SeedDataAsync(string path)
         {
             JsonDocument document;
 
-            using (var stream = File.OpenRead(path))
-                document = JsonDocument.Parse(stream);
+            await using (var stream = File.OpenRead(path))
+                document = await JsonDocument.ParseAsync(stream);
 
             foreach (var cardJson in document.RootElement.EnumerateArray())
             {
@@ -44,10 +44,10 @@ namespace Dejarix.App.Entities
                 };
 
                 cardImage.TitleNormalized = cardImage.Title.NormalizedForSearch();
-                CardImages!.Add(cardImage);
+                await CardImages.AddAsync(cardImage);
             }
 
-            SaveChanges();
+            await SaveChangesAsync();
         }
 
         protected override void OnModelCreating(ModelBuilder builder)
@@ -89,26 +89,18 @@ namespace Dejarix.App.Entities
 
         public async Task LogAsync(Exception exception)
         {
-            if (exception != null)
+            var rootLog = ExceptionLog.FromException(exception, 0);
+            await ExceptionLogs.AddAsync(rootLog);
+
+            int ordinal = 1;
+
+            for (var e = exception.InnerException; e != null; e = e.InnerException)
             {
-                var rootLog = ExceptionLog.FromException(exception);
-                rootLog.ExceptionId = Guid.NewGuid();
-                rootLog.ExceptionDate = DateTimeOffset.Now;
-                await ExceptionLogs.AddAsync(rootLog);
-
-                int ordinal = 1;
-
-                for (var e = exception.InnerException; e != null; e = e.InnerException)
-                {
-                    var log = ExceptionLog.FromException(e);
-                    log.ExceptionId = rootLog.ExceptionId;
-                    log.Ordinal = ordinal++;
-                    log.ExceptionDate = rootLog.ExceptionDate;
-                    await ExceptionLogs.AddAsync(log);
-                }
-
-                await SaveChangesAsync();
+                var log = ExceptionLog.FromException(e, ordinal++);
+                await ExceptionLogs.AddAsync(log);
             }
+
+            await SaveChangesAsync();
         }
     }
 }
