@@ -27,7 +27,7 @@ namespace Dejarix.App
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddHttpClient<Mailgun>();
-            
+
             var connectionString = Configuration.GetConnectionString("PrimaryDatabase");
             services.AddDbContext<DejarixDbContext>(options =>
             {

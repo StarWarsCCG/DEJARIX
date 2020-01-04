@@ -1,3 +1,5 @@
+@model Dejarix.App.Models.RegisterViewModel
+
 @{
     ViewData["Title"] = "Register";
 }
@@ -5,15 +7,23 @@
 <h1>User Registration</h1>
 <p>Welcome to DEJARIX! Fill in the form below to create a new user account!</p>
 
-<p>Register</p>
+@foreach (var error in Model.Errors)
+{
+    <div class="alert alert-danger">@error</div>
+}
+
+@if (Model.Success.Length > 0)
+{
+    <div class="alert alert-success">@Model.Success</div>
+}
 
 <form method="post" enctype="application/x-www-form-urlencoded">
     @Html.AntiForgeryToken()
     <div class="form-group">
-        <input type="text" name="register-username" placeholder="Username" />
+        <input type="text" name="register-username" placeholder="Username" value="@Model.PreviousUsername" />
     </div>
     <div class="form-group">
-        <input type="email" name="register-email" placeholder="Email Address" />
+        <input type="email" name="register-email" placeholder="Email Address" value="@Model.PreviousEmail" />
     </div>
     <div class="form-group">
         <input type="password" name="register-password" placeholder="Password" />
