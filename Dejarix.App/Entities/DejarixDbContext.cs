@@ -99,14 +99,16 @@ namespace Dejarix.App.Entities
 
         public async Task LogAsync(Exception exception)
         {
-            var rootLog = ExceptionLog.FromException(exception, 0);
+            var id = Guid.NewGuid();
+            var now = DateTimeOffset.Now;
+            var rootLog = ExceptionLog.FromException(exception, id, 0, now);
             await ExceptionLogs.AddAsync(rootLog);
 
             int ordinal = 1;
 
             for (var e = exception.InnerException; e != null; e = e.InnerException)
             {
-                var log = ExceptionLog.FromException(e, ordinal++);
+                var log = ExceptionLog.FromException(e, id, ordinal++, now);
                 await ExceptionLogs.AddAsync(log);
             }
 

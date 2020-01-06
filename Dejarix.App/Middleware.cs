@@ -22,19 +22,9 @@ namespace Dejarix.App
                         try
                         {
                             var factory = httpContext.RequestServices.GetService<ConnectionFactory>();
+                            
                             await using (var context = factory.CreateContext())
-                            {
-                                var id = Guid.NewGuid();
-                                int ordinal = 0;
-
-                                for (Exception? e = ex; e != null; e = e.InnerException)
-                                {
-                                    var log = ExceptionLog.FromException(e, ordinal++);
-                                    await context.AddAsync(log);
-                                }
-
-                                await context.SaveChangesAsync();
-                            }
+                                await context.LogAsync(ex);
                         }
                         catch
                         {

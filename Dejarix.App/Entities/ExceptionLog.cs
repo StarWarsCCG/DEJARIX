@@ -11,13 +11,13 @@ namespace Dejarix.App.Entities
         public string? ExceptionMessage { get; set; }
         public string? ExceptionStackTrace { get; set; }
 
-        public static ExceptionLog FromException(Exception exception, int ordinal)
+        public static ExceptionLog FromException(Exception exception, Guid id, int ordinal, DateTimeOffset date)
         {
             return new ExceptionLog
             {
-                ExceptionId = Guid.NewGuid(),
+                ExceptionId = id,
                 Ordinal = ordinal,
-                ExceptionDate = DateTimeOffset.Now,
+                ExceptionDate = date,
                 ExceptionType = exception.GetType().ToString(),
                 ExceptionMessage = exception.Message,
                 ExceptionStackTrace = exception.StackTrace
