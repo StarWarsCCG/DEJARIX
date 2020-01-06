@@ -30,11 +30,9 @@ namespace Dejarix.App
             services.AddHttpClient<Mailgun>();
 
             var connectionString = Configuration.GetConnectionString("PrimaryDatabase");
-            services.AddDbContext<DejarixDbContext>(options =>
-            {
-                options.UseNpgsql(connectionString);
-                options.EnableSensitiveDataLogging();
-            });
+            var connectionFactory = new ConnectionFactory(connectionString);
+            services.AddSingleton(connectionFactory);
+            services.AddDbContext<DejarixDbContext>(connectionFactory.BuildOptions);
             
             services
                 .AddIdentity<DejarixUser, IdentityRole<Guid>>(options =>
@@ -69,7 +67,8 @@ namespace Dejarix.App
             IWebHostEnvironment env,
             IServiceProvider serviceProvider)
         {
-            using (var context = serviceProvider.GetService<DejarixDbContext>())
+            var factory = serviceProvider.GetService<ConnectionFactory>();
+            using (var context = factory.CreateContext())
             {
                 if (env.IsDevelopment() && Configuration.GetValue<bool>("DeleteDatabase"))
                     context.Database.EnsureDeleted();
