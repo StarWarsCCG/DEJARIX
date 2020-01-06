@@ -17,9 +17,14 @@ namespace Dejarix.App.Entities
         public DbSet<CardInDeckRevision> CardsInDeckRevisions { get; set; } = null!;
         public DbSet<CardInventory> CardInventories { get; set; } = null!;
         public DbSet<ExceptionLog> ExceptionLogs { get; set; } = null!;
+        public DbSet<Trade> Trades { get; set; } = null!;
+        public DbSet<TradeProposal> TradeProposals { get; set; } = null!;
+        public DbSet<CardInTrade> CardsInTrades { get; set; } = null!;
+        public DbSet<TradeMessage> TradeMessages { get; set; } = null!;
 
         public DejarixDbContext(DbContextOptions<DejarixDbContext> options) : base(options)
         {
+            ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
         }
 
         public async Task SeedDataAsync(string path)
@@ -85,6 +90,11 @@ namespace Dejarix.App.Entities
                 .HasOne(dr => dr.Creator)
                 .WithMany()
                 .OnDelete(DeleteBehavior.SetNull);
+            
+            builder.Entity<Trade>().HasIndex(t => new {t.FirstUserId, t.Started});
+            builder.Entity<Trade>().HasIndex(t => new {t.SecondUserId, t.Started});
+            builder.Entity<CardInTrade>().HasKey(cit => new {cit.TradeProposalId, cit.UserId, cit.CardId});
+            builder.Entity<TradeMessage>().HasIndex(tm => new {tm.TradeId, tm.TimeSent});
         }
 
         public async Task LogAsync(Exception exception)

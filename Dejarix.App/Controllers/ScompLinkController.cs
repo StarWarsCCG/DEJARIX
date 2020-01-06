@@ -1,4 +1,6 @@
+using Dejarix.App.Entities;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Dejarix.App.Controllers
 {
@@ -6,6 +8,13 @@ namespace Dejarix.App.Controllers
     [ApiController]
     public class ScompLinkController : ControllerBase
     {
+        private readonly DejarixDbContext _context;
+
+        public ScompLinkController(DejarixDbContext context)
+        {
+            _context = context;
+        }
+
         [HttpGet("test")]
         [Produces("application/json")]
         public IActionResult Test()
