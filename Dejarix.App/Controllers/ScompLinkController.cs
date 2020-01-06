@@ -1,3 +1,4 @@
+using System;
 using Dejarix.App.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +21,12 @@ namespace Dejarix.App.Controllers
         public IActionResult Test()
         {
             return Ok(new int[] {1, 1, 3, 8});
+        }
+
+        [HttpGet("throw")]
+        public IActionResult Throw()
+        {
+            throw new InvalidOperationException("Blowing up as expected.");
         }
     }
 }
