@@ -1,0 +1,16 @@
+@model Dejarix.App.Models.StatusCodeViewModel
+
+@{
+    ViewData["Title"] = "Error " + Model.StatusCode;
+}
+
+<h1 class="text-center dejarix-status-code">@Model.StatusCode</h1>
+
+@if (Model.ReasonPhrase.Length > 0)
+{
+    <p class="text-center">@Model.ReasonPhrase</p>
+}
+else
+{
+    <p class="text-center">Ya done messed up, A A Ron.</p>
+}

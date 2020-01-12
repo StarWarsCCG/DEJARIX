@@ -95,6 +95,7 @@ namespace Dejarix.App
             }
 
             app.UseExceptionLogger();
+            app.UseStatusCodePagesWithReExecute("/status-code/{0}");
             app.UseStaticFiles();
 
             app.UseForwardedHeaders(

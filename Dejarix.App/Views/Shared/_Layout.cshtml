@@ -1,4 +1,7 @@
 ﻿@using Microsoft.AspNetCore.Identity
+@{
+    var bodyClass = ViewData["BodyClass"] as string ?? "container";
+}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,6 +10,9 @@
     <title>@ViewData["Title"] - DEJARIX</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" />
+    <link rel="apple-touch-icon" sizes="152x152" href="~/images/apple-touch-icon.png?v=0" />
+    <link rel="icon" type="image/png" sizes="32x32" href="~/images/favicon-32x32.png?v=0" />
+    <link rel="icon" type="image/png" sizes="16x16" href="~/images/favicon-16x16.png?v=0" />
 </head>
 <body>
     <header>
@@ -28,7 +34,7 @@
             </div>
         </nav>
     </header>
-    <div class="container">
+    <div class="@bodyClass">
         <main role="main" class="pb-3">
             @RenderBody()
         </main>
