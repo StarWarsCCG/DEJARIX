@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -15,7 +16,7 @@ namespace Dejarix.App
         private readonly string _url;
 
         public string DefaultSender { get; }
-        public string[] DefaultBcc { get; }
+        public ImmutableArray<string> DefaultBcc { get; }
 
         public Mailgun(
             IConfiguration configuration,
@@ -25,7 +26,11 @@ namespace Dejarix.App
             _httpClient = httpClient;
 
             DefaultSender = configuration["SenderEmailAddress"];
-            DefaultBcc = configuration.GetSection("DefaultBcc").GetChildren().Select(c => c.Value).ToArray();
+            DefaultBcc = configuration
+                .GetSection("DefaultBcc")
+                .GetChildren()
+                .Select(c => c.Value)
+                .ToImmutableArray();
 
             var apiKey = configuration["Mailgun:ApiKey"];
             var secret = "api:" + apiKey;
@@ -52,9 +57,9 @@ namespace Dejarix.App
         public string Subject { get; set; } = string.Empty;
         public string TextBody { get; set; } = string.Empty;
         public string HtmlBody { get; set; } = string.Empty;
-        public string[] To { get; set; } = Array.Empty<string>();
-        public string[] Cc { get; set; } = Array.Empty<string>();
-        public string[] Bcc { get; set; } = Array.Empty<string>();
+        public ImmutableArray<string> To { get; set; } = ImmutableArray<string>.Empty;
+        public ImmutableArray<string> Cc { get; set; } = ImmutableArray<string>.Empty;
+        public ImmutableArray<string> Bcc { get; set; } = ImmutableArray<string>.Empty;
 
         public IDictionary<string, string> ToDictionary()
         {
@@ -76,7 +81,7 @@ namespace Dejarix.App
 
         private static void AddRecipients(
             Dictionary<string, string> fields,
-            string[] recipients,
+            ImmutableArray<string> recipients,
             string key)
         {
             var formattedRecipients = string.Join(", ", recipients);

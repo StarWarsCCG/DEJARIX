@@ -28,5 +28,21 @@ namespace Dejarix.App.Controllers
         {
             throw new InvalidOperationException("Blowing up as expected.");
         }
+
+        [HttpGet("status")]
+        [Produces("application/json")]
+        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+        public IActionResult ServerStatus()
+        {
+            var result = new
+            {
+                DejarixVersion = GetType().Assembly.GetName().Version?.ToString(),
+                UtcStart = Startup.UtcStart.ToString("s"),
+                UtcNow = DateTime.UtcNow.ToString("s"),
+                GcMemory = GC.GetTotalMemory(false)
+            };
+
+            return Ok(result);
+        }
     }
 }

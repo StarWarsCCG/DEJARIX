@@ -36,19 +36,7 @@ namespace Dejarix.App.Entities
 
             foreach (var cardJson in document.RootElement.EnumerateArray())
             {
-                var cardImage = new CardImage
-                {
-                    Id = Guid.Parse(cardJson.GetProperty("ImageId").GetString()),
-                    OtherId = Guid.Parse(cardJson.GetProperty("OtherImageId").GetString()),
-                    IsLightSide = cardJson.GetProperty("IsLightSide").GetBoolean(),
-                    IsFront = cardJson.GetProperty("IsFront").GetBoolean(),
-                    Title = cardJson.GetProperty("CardName").GetString(),
-                    Destiny = cardJson.GetProperty("Destiny").GetString(),
-                    Expansion = cardJson.GetProperty("Expansion").GetString(),
-                    InfoJson = cardJson.ToString()
-                };
-
-                cardImage.TitleNormalized = cardImage.Title.NormalizedForSearch();
+                var cardImage = CardImage.FromJson(cardJson);
                 await CardImages.AddAsync(cardImage);
             }
 

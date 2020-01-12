@@ -8,6 +8,7 @@ using Dejarix.App.Entities;
 using System.Text;
 using Dejarix.App.Models;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 
 namespace Dejarix.App.Controllers
 {
@@ -67,7 +68,8 @@ namespace Dejarix.App.Controllers
             
             if (passwordResult.Succeeded)
             {
-                await _signInManager.SignInAsync(user, true);
+                var signInPersist = formData["sign-in-persist"].FirstOrDefault();
+                await _signInManager.SignInAsync(user, signInPersist == "on");
                 return RedirectToAction(nameof(HomeController.Index), "Home");
             }
             else
@@ -151,7 +153,7 @@ namespace Dejarix.App.Controllers
                 var email = new Email
                 {
                     From = mailgun.DefaultSender,
-                    To = new string[]{user.Email},
+                    To = ImmutableArray.Create(user.Email),
                     Bcc = mailgun.DefaultBcc,
                     Subject = $"Confirm {user.Email} on DEJARIX",
                     TextBody = "Visit this URL to confirm your email address at DEJARIX: " + url,
@@ -246,7 +248,7 @@ namespace Dejarix.App.Controllers
                 var email = new Email
                 {
                     From = mailgun.DefaultSender,
-                    To = new string[] {user.Email},
+                    To = ImmutableArray.Create(user.Email),
                     Bcc = mailgun.DefaultBcc,
                     Subject = $"DEJARIX - Reset password for {user.UserName}",
                     TextBody = "Visit this URL to reset your password at DEJARIX: " + url,
