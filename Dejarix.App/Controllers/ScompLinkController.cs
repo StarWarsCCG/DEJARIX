@@ -1,4 +1,9 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
 using Dejarix.App.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -7,6 +12,7 @@ namespace Dejarix.App.Controllers
 {
     [Route("scomp-link")]
     [ApiController]
+    [Produces("application/json")]
     public class ScompLinkController : ControllerBase
     {
         private readonly DejarixDbContext _context;
@@ -17,7 +23,6 @@ namespace Dejarix.App.Controllers
         }
 
         [HttpGet("test")]
-        [Produces("application/json")]
         public IActionResult Test()
         {
             return Ok(new int[] {1, 1, 3, 8});
@@ -30,7 +35,6 @@ namespace Dejarix.App.Controllers
         }
 
         [HttpGet("status")]
-        [Produces("application/json")]
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult ServerStatus()
         {
@@ -43,6 +47,22 @@ namespace Dejarix.App.Controllers
             };
 
             return Ok(result);
+        }
+
+        [HttpGet("all-cards")]
+        public async Task<IActionResult> AllCards()
+        {
+            var jsonText = await _context.CardImages
+                .Select(ci => ci.InfoJson)
+                .ToListAsync(HttpContext.RequestAborted);
+
+            var options = new JsonSerializerOptions
+            {
+                WriteIndented = true
+            };
+
+            var objects = jsonText.ConvertAll(item => JsonSerializer.Deserialize<object>(item));
+            return new JsonResult(objects, options);
         }
     }
 }

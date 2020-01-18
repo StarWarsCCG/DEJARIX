@@ -17,6 +17,7 @@ namespace Dejarix.App.Controllers
 
         [HttpGet("")] public IActionResult Index() => View();
         [HttpGet("privacy")] public IActionResult Privacy() => View();
+        [HttpGet("deck-builder")] public IActionResult DeckBuilder() => View();
         
         [HttpGet("status-code/{statusCode}")]
         public IActionResult StatusCodeGet(int statusCode)
