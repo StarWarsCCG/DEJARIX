@@ -60,7 +60,13 @@ namespace Dejarix.App
                 options.MinimumSameSitePolicy = Microsoft.AspNetCore.Http.SameSiteMode.None;
             });
             
-            services.AddControllersWithViews();
+            services
+                .AddControllersWithViews()
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.WriteIndented = true;
+                    options.JsonSerializerOptions.PropertyNamingPolicy = null;
+                });
             services.AddSignalR();
         }
 

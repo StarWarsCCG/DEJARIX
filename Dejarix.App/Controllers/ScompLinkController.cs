@@ -34,6 +34,25 @@ namespace Dejarix.App.Controllers
             throw new InvalidOperationException("Blowing up as expected.");
         }
 
+        [HttpGet("exceptions")]
+        public async Task<IActionResult> Exceptions()
+        {
+            var exceptionLogs =
+                await _context.ExceptionLogs.ToListAsync(HttpContext.RequestAborted);
+            
+            var result = exceptionLogs.ConvertAll(log => new
+            {
+                ExceptionId = log.ExceptionId,
+                Ordinal = log.Ordinal,
+                Date = log.ExceptionDate,
+                Type = log.ExceptionType,
+                Message = log.ExceptionMessage,
+                StackTrace = log.ExceptionStackTrace?.Split('\n')
+            });
+            
+            return Ok(result);
+        }
+
         [HttpGet("status")]
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult ServerStatus()
@@ -56,13 +75,47 @@ namespace Dejarix.App.Controllers
                 .Select(ci => ci.InfoJson)
                 .ToListAsync(HttpContext.RequestAborted);
 
-            var options = new JsonSerializerOptions
-            {
-                WriteIndented = true
-            };
+            var objects = jsonText.ConvertAll(item => JsonSerializer.Deserialize<JsonElement>(item));
+            return Ok(objects);
+        }
 
-            var objects = jsonText.ConvertAll(item => JsonSerializer.Deserialize<object>(item));
-            return new JsonResult(objects, options);
+        [HttpGet("deck-revision/{deckRevisionId}")]
+        public async Task<IActionResult> DeckRevision(Guid deckRevisionId)
+        {
+            var deckRevision = await _context.DeckRevisions
+                .Include(dr => dr.Cards)
+                .SingleOrDefaultAsync(dr => dr.DeckRevisionId == deckRevisionId);
+
+            if (deckRevision is null)
+            {
+                return NotFound();
+            }
+            else
+            {
+                var cards = deckRevision.Cards;
+                var result = new
+                {
+                    Inside = cards.Where(c => c.InsideCount > 0).ToDictionary(c => c.CardId, c => c.InsideCount),
+                    Outside = cards.Where(c => c.OutsideCount > 0).ToDictionary(c => c.CardId, c => c.OutsideCount)
+                };
+
+                return Ok(result);
+            }
+        }
+
+        [HttpGet("deck/{deckId}")]
+        public async Task<IActionResult> Deck(Guid deckId)
+        {
+            var deck = await _context.Decks.FindAsync(deckId);
+
+            if (deck is null)
+            {
+                return NotFound();
+            }
+            else
+            {
+                return await DeckRevision(deck.RevisionId);
+            }
         }
     }
 }

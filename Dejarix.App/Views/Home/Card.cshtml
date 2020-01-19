@@ -1,0 +1,12 @@
+@model Dejarix.App.Models.CardViewModel
+
+@{
+  ViewData["Title"] = Model.Title;
+}
+
+<div class="text-center">
+    <p>
+        <img src="@Model.FrontImage" alt="" />
+        <img src="@Model.BackImage" alt="" />
+    </p>
+</div>

@@ -27,20 +27,24 @@ namespace Dejarix.App.Entities
             ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
         }
 
+        private async Task<JsonDocument> LoadDocumentAsync(string path)
+        {
+            await using (var stream = File.OpenRead(path))
+                return await JsonDocument.ParseAsync(stream);
+        }
+
         public async Task SeedDataAsync(string path)
         {
-            JsonDocument document;
-
-            await using (var stream = File.OpenRead(path))
-                document = await JsonDocument.ParseAsync(stream);
-
-            foreach (var cardJson in document.RootElement.EnumerateArray())
+            using (var document = await LoadDocumentAsync(path))
             {
-                var cardImage = CardImage.FromJson(cardJson);
-                await CardImages.AddAsync(cardImage);
-            }
+                foreach (var cardJson in document.RootElement.EnumerateArray())
+                {
+                    var cardImage = CardImage.FromJson(cardJson);
+                    await CardImages.AddAsync(cardImage);
+                }
 
-            await SaveChangesAsync();
+                await SaveChangesAsync();
+            }
         }
 
         protected override void OnModelCreating(ModelBuilder builder)
@@ -57,7 +61,7 @@ namespace Dejarix.App.Entities
                 .WithMany()
                 .OnDelete(DeleteBehavior.SetNull);
 
-            builder.Entity<CardInDeckRevision>().HasKey(dc => new{dc.CardCollectionId, dc.CardId});
+            builder.Entity<CardInDeckRevision>().HasKey(dc => new{dc.DeckRevisionId, dc.CardId});
             builder.Entity<CardInDeckRevision>().HasOne(dc => dc.CardCollection);
             builder.Entity<CardInDeckRevision>().HasOne(dc => dc.Card);
 
