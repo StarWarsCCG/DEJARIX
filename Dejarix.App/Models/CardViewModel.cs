@@ -5,5 +5,6 @@ namespace Dejarix.App.Models
         public string? Title { get; set; }
         public string? FrontImage { get; set; }
         public string? BackImage { get; set; }
+        public bool IsHorizontal { get; set; }
     }
 }

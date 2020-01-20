@@ -45,6 +45,7 @@ namespace Dejarix.App.Controllers
                 var model = new CardViewModel
                 {
                     Title = card.Title,
+                    IsHorizontal = card.IsHorizontal,
                     FrontImage = Url.Content($"~/images/cards/png-370x512/{card.Id}.png"),
                     BackImage = Url.Content($"~/images/cards/png-370x512/{card.OtherId}.png")
                 };

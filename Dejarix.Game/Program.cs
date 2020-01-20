@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Security.Cryptography;
-using Newtonsoft.Json;
+using System.Text.Json;
 
 namespace Dejarix
 {
@@ -15,9 +15,13 @@ namespace Dejarix
             state.DarkSide.ReserveDeck.AddRange(Card.Make(5, 9, 11));
             state.LightSide.ReserveDeck.AddRange(Card.Make(6, 12, 18));
 
+            var options = new JsonSerializerOptions
+            {
+                WriteIndented = true
+            };
+
             Console.WriteLine("Starting card count: " + state.CountCards());
-            Console.WriteLine(
-                JsonConvert.SerializeObject(state, Formatting.Indented));
+            Console.WriteLine(JsonSerializer.Serialize(state, options));
         }
 
         static void Main(string[] args)
