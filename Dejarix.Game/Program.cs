@@ -11,16 +11,16 @@ namespace Dejarix
     {
         static void SampleGameChanges()
         {
-            var state = new GameState();
-            state.DarkSide.ReserveDeck.AddRange(Card.Make(5, 9, 11));
-            state.LightSide.ReserveDeck.AddRange(Card.Make(6, 12, 18));
+            var darkSide = PlayerState.Empty.WithReserveDeck(Card.MakeArray(5, 9, 11));
+            var lightSide = PlayerState.Empty.WithReserveDeck(Card.MakeArray(6, 12, 18));
+            var state = new GameState(ImmutableArray<SystemState>.Empty, darkSide, lightSide);
 
             var options = new JsonSerializerOptions
             {
                 WriteIndented = true
             };
 
-            Console.WriteLine("Starting card count: " + state.CountCards());
+            Console.WriteLine("Starting card count: " + state.Count);
             Console.WriteLine(JsonSerializer.Serialize(state, options));
         }
 
@@ -29,6 +29,9 @@ namespace Dejarix
             // var test = default(ImmutableArray<Card>);
             // test = test.Add(default);
             // Console.WriteLine(test.Length);
+
+            // var array = default(ImmutableArray<int>);
+            // Console.WriteLine(array.Length);
 
             var random = new Random();
 

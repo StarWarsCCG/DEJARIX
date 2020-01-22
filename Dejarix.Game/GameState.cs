@@ -5,43 +5,38 @@ using System.Linq;
 
 namespace Dejarix
 {
-    static class CardExtensions
+    public readonly struct GameState
     {
-        public static void Shuffle<T>(
-            this List<T> list,
-            Func<int, int> rng)
+        public static readonly GameState Empty = new GameState(
+            ImmutableArray<SystemState>.Empty,
+            PlayerState.Empty,
+            PlayerState.Empty);
+        
+        public ImmutableArray<SystemState> Systems { get; }
+        public PlayerState DarkSide { get; }
+        public PlayerState LightSide { get; }
+
+        public int Count
         {
-            for (int i = list.Count - 1; i > 0; --i)
+            get
             {
-                int swapIndex = rng(i);
-                var swapValue = list[i];
-                list[i] = list[swapIndex];
-                list[swapIndex] = swapValue;
+                int sum = DarkSide.Count + LightSide.Count;
+
+                foreach (var bin in Systems)
+                    sum += bin.Count;
+                
+                return sum;
             }
         }
-    }
 
-    class GameState
-    {
-        public List<ParsecBin> Locations { get; } = new List<ParsecBin>();
-        public PlayerState DarkSide { get; } = new PlayerState();
-        public PlayerState LightSide { get; } = new PlayerState();
-
-        public int CountCards()
+        public GameState(
+            ImmutableArray<SystemState> systems,
+            PlayerState darkSide,
+            PlayerState lightSide)
         {
-            return
-                Locations.Sum(bin => bin.CountCards()) +
-                DarkSide.CountCards() +
-                LightSide.CountCards();
-        }
-
-        public GameState DeepClone()
-        {
-            var result = new GameState();
-            result.DarkSide.AddAll(DarkSide);
-            result.LightSide.AddAll(LightSide);
-
-            return result;
+            Systems = systems;
+            DarkSide = darkSide;
+            LightSide = lightSide;
         }
     }
 }
