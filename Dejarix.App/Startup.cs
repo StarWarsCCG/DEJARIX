@@ -82,7 +82,6 @@ namespace Dejarix.App
                 if (env.IsDevelopment() && Configuration.GetValue<bool>("DeleteDatabase"))
                     context.Database.EnsureDeleted();
                 
-                // context.Database.Migrate();
                 if (context.Database.EnsureCreated())
                 {
                     // Seed important data!

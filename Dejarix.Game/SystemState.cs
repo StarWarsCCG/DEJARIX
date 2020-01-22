@@ -15,10 +15,21 @@ namespace Dejarix
         public ImmutableArray<LocationState> Sectors { get; }
         public ImmutableArray<LocationState> Sites { get; }
 
-        public int Count =>
-            System.Count +
-            Sectors.Length +
-            Sites.Length;
+        public int Count
+        {
+            get
+            {
+                var sum = System.Count;
+
+                foreach (var ls in Sectors)
+                    sum += ls.Count;
+                
+                foreach (var ls in Sites)
+                    sum += ls.Count;
+                
+                return sum;
+            }
+        }
 
         public SystemState(
             LocationState system,
