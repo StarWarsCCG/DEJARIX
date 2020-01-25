@@ -3,12 +3,34 @@
 }
 
 @section Scripts{
+  <script src="~/js/card-search.js" asp-append-version="true"></script>
   <script src="~/js/card-inventory.js" asp-append-version="true"></script>
 }
 
 <h1>Card Inventory</h1>
 
-<table class="table">
+<partial name="_CardSearchTable" />
+<p>
+  <button id="card-search-button" type="button" class="btn btn-primary" disabled="disabled">Search</button>
+</p>
+<div class="modal fade" id="card-search-modal" tabindex="-1" role="dialog" aria-labelledby="card-search-modal-label" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="card-search-modal-label">Single Card</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div id="card-search-image" class="modal-body text-center"></div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+<div id="card-search-message" class="alert alert-info">Loading card database...</div>
+<table id="card-inventory-table" class="table">
   <thead>
     <tr>
       <th>Title</th>
@@ -16,5 +38,5 @@
       <th title="Everyone can see these numbers. Use these card counts to advertise that you are open to trades.">Public</th>
     </tr>
   </thead>
-  <tbody id="card-inventory-body"></tbody>
+  <tbody id="card-search-table-body"></tbody>
 </table>
