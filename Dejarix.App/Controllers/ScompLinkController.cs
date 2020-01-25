@@ -3,8 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Dejarix.App.Entities;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,10 +19,14 @@ namespace Dejarix.App.Controllers
     public class ScompLinkController : ControllerBase
     {
         private readonly DejarixDbContext _context;
+        private readonly UserManager<DejarixUser> _userManager;
 
-        public ScompLinkController(DejarixDbContext context)
+        public ScompLinkController(
+            DejarixDbContext context,
+            UserManager<DejarixUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
         [HttpGet("test")]
@@ -69,13 +76,14 @@ namespace Dejarix.App.Controllers
         }
 
         [HttpGet("all-cards")]
-        public async Task<IActionResult> AllCards()
+        public async Task<IActionResult> AllCards(CancellationToken cancellationToken)
         {
             var jsonText = await _context.CardImages
                 .Select(ci => ci.InfoJson)
-                .ToListAsync(HttpContext.RequestAborted);
+                .ToListAsync(cancellationToken);
 
-            var objects = jsonText.ConvertAll(item => JsonSerializer.Deserialize<JsonElement>(item));
+            var objects = jsonText.ConvertAll(
+                item => JsonSerializer.Deserialize<Dictionary<string, object>>(item));
             return Ok(objects);
         }
 
@@ -116,6 +124,30 @@ namespace Dejarix.App.Controllers
             {
                 return await DeckRevision(deck.RevisionId);
             }
+        }
+
+        [HttpGet("card-inventory")]
+        [Authorize]
+        public async Task<IActionResult> CardInventory(CancellationToken cancellationToken)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            var cards = await _context.CardInventories
+                .Where(ci => ci.UserId == user.Id)
+                .ToListAsync(cancellationToken);
+            
+            var result = cards.ToDictionary(
+                c => c.CardImageId.ToString(),
+                c => new
+                {
+                    PublicNotes = c.PublicNotes,
+                    PublicHaveCount = c.PublicHaveCount,
+                    PublicWantCount = c.PublicWantCount,
+                    PrivateNotes = c.PrivateNotes,
+                    PrivateHaveCount = c.PrivateHaveCount,
+                    PrivateWantCount = c.PrivateWantCount
+                });
+
+            return Ok(result);
         }
     }
 }

@@ -1,0 +1,20 @@
+@{
+  ViewData["Title"] = "Card Inventory";
+}
+
+@section Scripts{
+  <script src="~/js/card-inventory.js" asp-append-version="true"></script>
+}
+
+<h1>Card Inventory</h1>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Title</th>
+      <th title="Only you can see these numbers. Use these card counts to privately track your inventory.">Private</th>
+      <th title="Everyone can see these numbers. Use these card counts to advertise that you are open to trades.">Public</th>
+    </tr>
+  </thead>
+  <tbody id="card-inventory-body"></tbody>
+</table>

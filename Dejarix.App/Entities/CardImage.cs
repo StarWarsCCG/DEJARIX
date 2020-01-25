@@ -7,11 +7,12 @@ namespace Dejarix.App.Entities
 {
     public class CardImage
     {
-        [Key] public Guid Id { get; set; }
+        [Key] public Guid ImageId { get; set; }
         public Guid OtherId { get; set; }
         public bool IsLightSide { get; set; }
         public bool IsFront { get; set; }
         public bool IsHorizontal { get; set; }
+        public bool IsVirtual { get; set; }
         [Required] public string Title { get; set; } = string.Empty;
         [Required] public string TitleNormalized { get; set; } = string.Empty;
         [Required] public string Destiny { get; set; } = string.Empty;
@@ -22,7 +23,7 @@ namespace Dejarix.App.Entities
         {
             var result = new CardImage
             {
-                Id = Guid.Parse(json.GetProperty("ImageId").GetString()),
+                ImageId = Guid.Parse(json.GetProperty("ImageId").GetString()),
                 OtherId = Guid.Parse(json.GetProperty("OtherImageId").GetString()),
                 IsLightSide = json.GetProperty("IsLightSide").GetBoolean(),
                 IsFront = json.GetProperty("IsFront").GetBoolean(),
@@ -30,6 +31,7 @@ namespace Dejarix.App.Entities
                     .GetProperty("SecondaryTypes")
                     .EnumerateArray()
                     .Any(je => je.GetString() == "Site"),
+                IsVirtual = json.GetProperty("Expansion").GetString().StartsWith("Virtual"),
                 Title = json.GetProperty("CardName").GetString(),
                 Destiny = json.GetProperty("Destiny").GetString(),
                 Expansion = json.GetProperty("Expansion").GetString(),

@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using Dejarix.App.Entities;
 using Dejarix.App.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
@@ -46,7 +47,7 @@ namespace Dejarix.App.Controllers
                 {
                     Title = card.Title,
                     IsHorizontal = card.IsHorizontal,
-                    FrontImage = Url.Content($"~/images/cards/png-370x512/{card.Id}.png"),
+                    FrontImage = Url.Content($"~/images/cards/png-370x512/{card.ImageId}.png"),
                     BackImage = Url.Content($"~/images/cards/png-370x512/{card.OtherId}.png")
                 };
 
@@ -80,5 +81,9 @@ namespace Dejarix.App.Controllers
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
+
+        [HttpGet("card-inventory")]
+        [Authorize]
+        public IActionResult CardInventory() => View("CardInventory");
     }
 }

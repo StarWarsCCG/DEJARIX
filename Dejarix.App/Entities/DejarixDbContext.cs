@@ -89,16 +89,14 @@ namespace Dejarix.App.Entities
             builder.Entity<TradeMessage>().HasIndex(tm => new {tm.TradeId, tm.TimeSent});
         }
 
-        public async Task LogAsync(Exception exception)
+        public async Task LogAsync(Exception? exception)
         {
             var id = Guid.NewGuid();
             var now = DateTimeOffset.Now;
-            var rootLog = ExceptionLog.FromException(exception, id, 0, now);
-            await ExceptionLogs.AddAsync(rootLog);
 
-            int ordinal = 1;
+            int ordinal = 0;
 
-            for (var e = exception.InnerException; e != null; e = e.InnerException)
+            for (var e = exception; e != null; e = e.InnerException)
             {
                 var log = ExceptionLog.FromException(e, id, ordinal++, now);
                 await ExceptionLogs.AddAsync(log);
