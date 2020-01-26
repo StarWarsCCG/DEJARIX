@@ -36,7 +36,7 @@ namespace Dejarix.App
             var connectionFactory = new ConnectionFactory(connectionString);
             services.AddSingleton(connectionFactory);
             services.AddDbContext<DejarixDbContext>(connectionFactory.BuildOptions);
-            
+
             services
                 .AddIdentity<DejarixUser, IdentityRole<Guid>>(options =>
                 {

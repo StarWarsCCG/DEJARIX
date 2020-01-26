@@ -1,12 +1,7 @@
-namespace Dejarix
+namespace Dejarix.Swccg
 {
     public abstract class GameStateChange
     {
-        public static GameStateChange FromCommandString(string commandString)
-        {
-            return null;
-        }
-
         public string CommandString { get; }
 
         public GameStateChange(string commandString)

@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
-namespace Dejarix
+namespace Dejarix.Swccg
 {
     public readonly struct SystemState
     {

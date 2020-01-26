@@ -1,12 +1,11 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 
-namespace Dejarix
+namespace Dejarix.Swccg
 {
     public readonly struct LocationState
     {
         public static readonly LocationState Empty = new LocationState(
-            ImmutableArray<Card>.Empty,
             ImmutableArray<Card>.Empty,
             ImmutableArray<Card>.Empty,
             ImmutableArray<Card>.Empty);
@@ -14,24 +13,20 @@ namespace Dejarix
         public ImmutableArray<Card> LocationStack { get; }
         public ImmutableArray<Card> DarkSide { get; }
         public ImmutableArray<Card> LightSide { get; }
-        public ImmutableArray<Card> Attach { get; }
 
         public int Count =>
             LocationStack.Length +
             DarkSide.Length +
-            LightSide.Length +
-            Attach.Length;
+            LightSide.Length;
 
         public LocationState(
             ImmutableArray<Card> locationStack,
             ImmutableArray<Card> darkSide,
-            ImmutableArray<Card> lightSide,
-            ImmutableArray<Card> attach)
+            ImmutableArray<Card> lightSide)
         {
             LocationStack = locationStack;
             DarkSide = darkSide;
             LightSide = lightSide;
-            Attach = attach;
         }
     }
 }

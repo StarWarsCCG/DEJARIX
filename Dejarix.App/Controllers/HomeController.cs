@@ -15,23 +15,32 @@ namespace Dejarix.App.Controllers
 {
     public class HomeController : Controller
     {
+        private readonly DejarixDbContext _context;
         private readonly ILogger<HomeController> _logger;
 
-        public HomeController(ILogger<HomeController> logger)
+        public HomeController(
+            DejarixDbContext context,
+            ILogger<HomeController> logger)
         {
+            _context = context;
             _logger = logger;
         }
 
         [HttpGet("")] public IActionResult Index() => View();
         [HttpGet("privacy")] public IActionResult Privacy() => View();
         [HttpGet("deck-builder")] public IActionResult DeckBuilder() => View();
+        
+        [HttpGet("decks")]
+        public async Task<IActionResult> Decks()
+        {
+            await Task.CompletedTask;
+            throw new NotImplementedException();
+        }
 
         [HttpGet("card/{id}")]
-        public async Task<IActionResult> Card(
-            Guid id,
-            [FromServices] DejarixDbContext context)
+        public async Task<IActionResult> Card(Guid id)
         {
-            var card = await context.CardImages.FindAsync(id);
+            var card = await _context.CardImages.FindAsync(id);
 
             if (card is null)
             {

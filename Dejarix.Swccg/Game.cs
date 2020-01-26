@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 
-namespace Dejarix
+namespace Dejarix.Swccg
 {
     public class Game
     {

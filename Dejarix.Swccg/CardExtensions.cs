@@ -33,7 +33,8 @@ namespace Dejarix
 
         public static ImmutableArray<T> Shuffled<T>(
             this ImmutableArray<T> array,
-            Func<int, int> rng)
+            Func<int, int> rng,
+            int iterationCount = 1)
         {
             if (array.IsDefaultOrEmpty)
             {
@@ -44,12 +45,15 @@ namespace Dejarix
                 var builder = ImmutableArray.CreateBuilder<T>(array.Length);
                 builder.AddRange(array);
 
-                for (int i = builder.Count - 1; i > 0; --i)
+                for (int i = 0; i < iterationCount; ++i)
                 {
-                    int swapIndex = rng(i);
-                    var swapValue = builder[i];
-                    builder[i] = builder[swapIndex];
-                    builder[swapIndex] = swapValue;
+                    for (int j = builder.Count - 1; j > 0; --j)
+                    {
+                        int swapIndex = rng(j);
+                        var swapValue = builder[j];
+                        builder[j] = builder[swapIndex];
+                        builder[swapIndex] = swapValue;
+                    }
                 }
 
                 return builder.MoveToImmutable();

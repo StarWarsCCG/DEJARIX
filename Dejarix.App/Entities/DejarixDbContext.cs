@@ -21,6 +21,7 @@ namespace Dejarix.App.Entities
         public DbSet<TradeProposal> TradeProposals { get; set; } = null!;
         public DbSet<CardInTrade> CardsInTrades { get; set; } = null!;
         public DbSet<TradeMessage> TradeMessages { get; set; } = null!;
+        public DbSet<Game> Games { get; set; } = null!;
 
         public DejarixDbContext(DbContextOptions<DejarixDbContext> options) : base(options)
         {
@@ -62,7 +63,7 @@ namespace Dejarix.App.Entities
                 .OnDelete(DeleteBehavior.SetNull);
 
             builder.Entity<CardInDeckRevision>().HasKey(dc => new{dc.DeckRevisionId, dc.CardId});
-            builder.Entity<CardInDeckRevision>().HasOne(dc => dc.CardCollection);
+            builder.Entity<CardInDeckRevision>().HasOne(dc => dc.DeckRevision);
             builder.Entity<CardInDeckRevision>().HasOne(dc => dc.Card);
 
             builder
