@@ -1,5 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Dejarix.App.Entities;
 using Dejarix.App.Models;
@@ -85,5 +88,11 @@ namespace Dejarix.App.Controllers
         [HttpGet("card-inventory")]
         [Authorize]
         public IActionResult CardInventory() => View("CardInventory");
+
+        [HttpGet("card-inventory/{userId}")]
+        public IActionResult ViewCardInventory()
+        {
+            return Ok("Under construction");
+        }
     }
 }

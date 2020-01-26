@@ -149,5 +149,49 @@ namespace Dejarix.App.Controllers
 
             return Ok(result);
         }
+
+        [HttpPost("card-inventory")]
+        [Consumes("application/json")]
+        [Authorize]
+        public async Task<IActionResult> PostCardInventory(CancellationToken cancellationToken)
+        {
+            var user = await _userManager.GetUserAsync(User);
+
+            var document = await JsonDocument.ParseAsync(
+                Request.Body,
+                default,
+                cancellationToken);
+            
+            try
+            {
+                var changes = new List<CardInventory>();
+                foreach (var property in document.RootElement.EnumerateObject())
+                {
+                    var cardImageId = Guid.Parse(property.Name);
+                    
+                    var now = DateTimeOffset.Now;
+                    var change = new CardInventory
+                    {
+                        UserId = user.Id,
+                        CardImageId = cardImageId,
+                        PublicLastUpdated = now,
+                        PrivateLastUpdated = now
+                    };
+
+                    // TODO: finish
+                }
+
+                return Ok();
+            }
+            catch (Exception ex) when (ex is JsonException || ex is FormatException)
+            {
+                await _context.LogAsync(ex);
+                return BadRequest(ex.Message);
+            }
+            finally
+            {
+                document.Dispose();
+            }
+        }
     }
 }
