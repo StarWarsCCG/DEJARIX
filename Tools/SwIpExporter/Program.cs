@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Text;
 using System.Diagnostics;
+using System.Linq;
 
 namespace SwIpExporter
 {
@@ -59,20 +60,21 @@ namespace SwIpExporter
             return new string(buffer, 0, n);
         }
 
+        static readonly string[] Suffixes = new string[]
+        {
+            " (V)",
+            " (EP1)",
+            " (CC)",
+            " (Frozen)"
+        };
+
         static string WithoutSuffix(string cardName)
         {
-            const string VSuffix = " (V)";
-            const string Ep1Suffix = " (EP1)";
-            const string CcSuffix = " (CC)";
-            
-            if (cardName.EndsWith(VSuffix))
-                cardName = cardName.Substring(0, cardName.Length - VSuffix.Length);
-            
-            if (cardName.EndsWith(CcSuffix))
-                cardName = cardName.Substring(0, cardName.Length - CcSuffix.Length);
-            
-            if (cardName.EndsWith(Ep1Suffix))
-                cardName = cardName.Substring(0, cardName.Length - Ep1Suffix.Length);
+            foreach (var suffix in Suffixes)
+            {
+                if (cardName.EndsWith(suffix))
+                    cardName = cardName[..^suffix.Length];
+            }
             
             return cardName;
         }
@@ -90,6 +92,7 @@ namespace SwIpExporter
                 var frozenLukeFront = Guid.NewGuid().ToString();
                 var frozenLukeBack = Guid.NewGuid().ToString();
                 var frozenHan = Guid.NewGuid().ToString();
+                int rowCount = 0;
 
                 var data = new List<Dictionary<string, object>>();
 
@@ -114,6 +117,7 @@ namespace SwIpExporter
 
                             while (reader.Read())
                             {
+                                ++rowCount;
                                 var fields = new Dictionary<string, object>();
                                 var swIpId = reader[idOrdinal].ToString();
                                 var frontId = Guid.NewGuid().ToString();
@@ -224,7 +228,11 @@ namespace SwIpExporter
                 using (var stream = File.Create("swccg.json"))
                     await JsonSerializer.SerializeAsync(stream, data, options);
                 
-                Console.WriteLine("Converted data in " + stopwatch.Elapsed);
+                var cardCount = data.Count(d => (bool)d["IsFront"]);
+                Console.WriteLine($"Converted {cardCount} cards ({rowCount} rows) to {data.Count} faces in {stopwatch.Elapsed}");
+
+                // foreach (var cardName in data.Select(d => d["CardName"].ToString()).Where(cn => cn.EndsWith(")")))
+                //     Console.WriteLine(cardName);
             }
             catch (Exception ex)
             {
