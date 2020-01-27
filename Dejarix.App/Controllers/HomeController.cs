@@ -101,7 +101,7 @@ namespace Dejarix.App.Controllers
         [HttpGet("card-inventory/{userId}")]
         public IActionResult ViewCardInventory()
         {
-            return Ok("Under construction");
+            throw new NotImplementedException();
         }
     }
 }
