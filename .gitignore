@@ -5,4 +5,5 @@ obj/
 launchSettings.json
 appsettings.*
 ignore.me.*
-
+*.sqlite
+*.sdb
