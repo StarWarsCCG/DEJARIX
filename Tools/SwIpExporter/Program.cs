@@ -7,11 +7,54 @@ using System.IO;
 using System.Text;
 using System.Diagnostics;
 using System.Linq;
+using System.Collections.Immutable;
 
 namespace SwIpExporter
 {
     class Program
     {
+        static readonly ImmutableDictionary<string, string> GempExpansions = new Dictionary<string, string>
+        {
+            ["Hoth"] = "3",
+            ["Premiere"] = "1",
+            ["Special Edition"] = "7",
+            ["Dagobah"] = "4",
+            ["Theed Palace"] = "14",
+            ["Enhanced Cloud City"] = "109",
+            ["Jabba's Palace"] = "6",
+            ["Reflections III"] = "13",
+            ["Tatooine"] = "11",
+            ["Third Anthology"] = "111",
+            ["Coruscant"] = "12",
+            ["Endor"] = "8",
+            ["Cloud City"] = "5",
+            ["Virtual Card Set #0"] = "200",
+            ["Reflections II"] = "10",
+            ["Death Star II"] = "9",
+            ["A New Hope"] = "2",
+            ["Virtual Defensive Shields"] = "200",
+            ["Jabba's Palace Sealed Deck"] = "112",
+            ["Official Tournament Sealed Deck"] = "106",
+            ["Enhanced Premiere Pack"] = "108",
+            ["Enhanced Jabba's Palace"] = "110",
+            ["Hoth 2 Player"] = "104",
+            ["Virtual Card Set #1"] = "201",
+            ["Jedi Pack"] = "102",
+            ["Premiere 2 Player"] = "101",
+            ["Rebel Leader Cards"] = "103",
+            ["Virtual Card Set #2"] = "202",
+            ["Virtual Card Set #3"] = "203",
+            ["Virtual Card Set #4"] = "204",
+            ["Virtual Card Set #5"] = "205",
+            ["Demonstration Deck Premium Card Set"] = "301",
+            ["Virtual Card Set #6"] = "206",
+            ["Virtual Card Set #7"] = "207",
+            ["Virtual Card Set #8"] = "208",
+            ["Virtual Card Set #9"] = "209",
+            ["Virtual Card Set #10"] = "210",
+            ["Virtual Card Set #11"] = "211"
+        }.ToImmutableDictionary();
+
         private static bool InRange(char c, char low, char high) => low <= c && c <= high;
 
         static string GetString(string s)
@@ -94,6 +137,11 @@ namespace SwIpExporter
                 var frozenHan = Guid.NewGuid().ToString();
                 int rowCount = 0;
 
+                GempTitles gempTitles;
+
+                using (var stream = File.OpenRead("gemp-titles.json"))
+                    gempTitles = await JsonSerializer.DeserializeAsync<GempTitles>(stream);
+
                 var data = new List<Dictionary<string, object>>();
 
                 Console.WriteLine("Converting data -- " + DateTime.Now.ToString("s"));
@@ -114,6 +162,10 @@ namespace SwIpExporter
                             int cardTypeOrdinal = reader.GetOrdinal("CardType");
                             int cardNameOrdinal = reader.GetOrdinal("CardName");
                             int subtypeOrdinal = reader.GetOrdinal("Subtype");
+                            int expansionOrdinal = reader.GetOrdinal("Expansion");
+
+                            var darkGempLookup = GempTitles.Organized(gempTitles.DarkSide);
+                            var lightGempLookup = GempTitles.Organized(gempTitles.LightSide);
 
                             while (reader.Read())
                             {
@@ -125,10 +177,25 @@ namespace SwIpExporter
                                 var isLightSide = grouping == "Light";
                                 var cardType = reader.GetString(cardTypeOrdinal);
                                 var cardName = WithoutSuffix(reader.GetString(cardNameOrdinal));
+                                var expansion = reader.GetString(expansionOrdinal);
+                                var gempLookup = isLightSide ? lightGempLookup : darkGempLookup;
                                 fields.Add("ImageId", frontId.ToString());
                                 fields.Add("OtherImageId", isLightSide ? lightBackId : darkBackId);
                                 fields.Add("IsLightSide", isLightSide);
                                 fields.Add("IsFront", true);
+
+                                var gempExpansionId = GempExpansions[expansion];
+                                var gempIdByTitle = gempLookup[gempExpansionId];
+                                
+                                if (gempIdByTitle.TryGetValue(cardName, out var gempId) ||
+                                    (gempExpansionId == "200" && gempLookup["301"].TryGetValue(cardName, out gempId)))
+                                {
+                                    fields.Add("GempId", gempId);
+                                }
+                                else
+                                {
+                                    fields.Add("NoGemp", null);
+                                }
 
                                 for (int i = 0; i < reader.FieldCount; ++i)
                                 {
@@ -147,7 +214,8 @@ namespace SwIpExporter
                                     {
                                         const string Or = " Or ";
                                         var subtype = reader[i].ToString();
-                                        var subtypes = subtype.Contains(Or) ? subtype.Split(Or) : subtype.Split('/');
+                                        var option = StringSplitOptions.RemoveEmptyEntries;
+                                        var subtypes = subtype.Contains(Or) ? subtype.Split(Or, option) : subtype.Split('/', option);
 
                                         if (swIpId == "832")
                                         {
@@ -171,14 +239,23 @@ namespace SwIpExporter
 
                                 if (cardType == "Objective")
                                 {
+                                    cardName = fields["ObjectiveFrontName"].ToString();
+                                    
+                                    if (gempIdByTitle.TryGetValue(cardName, out gempId))
+                                    {
+                                        fields.Add("GempId", gempId);
+                                        fields.Remove("NoGemp");
+                                    }
+                                    
                                     var backFields = new Dictionary<string, object>(fields);
                                     var backId = Guid.NewGuid().ToString();
                                     var backCardName = fields["ObjectiveBackName"].ToString();
-                                    cardName = fields["ObjectiveFrontName"].ToString();
+                                    
                                     fields["OtherImageId"] = backId;
                                     fields["CardName"] = cardName;
                                     fields["Gametext"] = fields["ObjectiveFront"];
                                     fields["CardNameNormalized"] = SearchNormalized(cardName);
+                                    fields["Destiny"] = "0";
                                     
                                     backFields["ImageId"] = backId;
                                     backFields["OtherImageId"] = frontId;
@@ -186,6 +263,7 @@ namespace SwIpExporter
                                     backFields["CardName"] = fields["ObjectiveBackName"];
                                     backFields["Gametext"] = fields["ObjectiveBack"];
                                     backFields["CardNameNormalized"] = SearchNormalized(backCardName);
+                                    backFields["Destiny"] = "7";
 
                                     data.Add(backFields);
                                 }
@@ -227,6 +305,19 @@ namespace SwIpExporter
                 
                 using (var stream = File.Create("swccg.json"))
                     await JsonSerializer.SerializeAsync(stream, data, options);
+                
+                foreach (var d in data)
+                {
+                    if (d.TryGetValue("GempId", out var obj))
+                    {
+                        var gempId = obj.ToString();
+                        gempTitles.DarkSide.Remove(gempId);
+                        gempTitles.LightSide.Remove(gempId);
+                    }
+                }
+
+                using (var stream = File.Create("gemp-missing.json"))
+                    await JsonSerializer.SerializeAsync(stream, gempTitles, options);
                 
                 var cardCount = data.Count(d => (bool)d["IsFront"]);
                 Console.WriteLine($"Converted {cardCount} cards ({rowCount} rows) to {data.Count} faces in {stopwatch.Elapsed}");
