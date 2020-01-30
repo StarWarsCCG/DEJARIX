@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Text.Json;
-using System.Data.SQLite;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.IO;
@@ -55,9 +54,53 @@ namespace SwIpExporter
             ["Virtual Card Set #11"] = "211"
         }.ToImmutableDictionary();
 
+        static readonly string[] IconSeparators = new string[] { ", ", "," };
+
         private static bool InRange(char c, char low, char high) => low <= c && c <= high;
 
-        static string GetString(string s)
+        static void MaybeAddInt32(Dictionary<string, object> dictionary, JsonElement element, string key)
+        {
+            var value = MaybeGetInt32(element, key);
+
+            if (value.HasValue)
+                dictionary.Add(key, value);
+        }
+        
+        static int? MaybeGetInt32(JsonElement element, string key)
+        {
+            if (element.TryGetProperty(key, out var property) &&
+                property.ValueKind == JsonValueKind.Number)
+            {
+                return property.GetInt32();
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        static void MaybeAddString(Dictionary<string, object> dictionary, JsonElement element, string key)
+        {
+            var value = MaybeGetString(element, key);
+
+            if (value != null)
+                dictionary.Add(key, value);
+        }
+        
+        static string MaybeGetString(JsonElement element, string key)
+        {
+            if (element.TryGetProperty(key, out var property) &&
+                property.ValueKind == JsonValueKind.String)
+            {
+                return property.GetString();
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        static string FilterString(string s)
         {
             return s
                 .Replace((char)65533, 'é')
@@ -108,7 +151,9 @@ namespace SwIpExporter
             " (V)",
             " (EP1)",
             " (CC)",
-            " (Frozen)"
+            " (Frozen)",
+            " (Starship)",
+            " (Vehicle)"
         };
 
         static string WithoutSuffix(string cardName)
@@ -122,213 +167,233 @@ namespace SwIpExporter
             return cardName;
         }
 
+        static async Task<JsonDocument> ParseJsonFileAsync(string file)
+        {
+            using (var stream = File.OpenRead(file))
+                return await JsonDocument.ParseAsync(stream);
+        }
+
         static async Task Main(string[] args)
         {
             try
             {
-                var stopwatch = Stopwatch.StartNew();
-                var darkBackId = "60cca2dd-a989-4c55-8a7b-cd6b86a95ce5";
-                var lightBackId = "14c10fe6-199e-4b7d-9cea-1c7247e42d3e";
-                
-                var falconFront = Guid.NewGuid().ToString();
-                var falconBack = Guid.NewGuid().ToString();
-                var frozenLukeFront = Guid.NewGuid().ToString();
-                var frozenLukeBack = Guid.NewGuid().ToString();
-                var frozenHan = Guid.NewGuid().ToString();
-                int rowCount = 0;
-
-                GempTitles gempTitles;
-
-                using (var stream = File.OpenRead("gemp-titles.json"))
-                    gempTitles = await JsonSerializer.DeserializeAsync<GempTitles>(stream);
-
-                var data = new List<Dictionary<string, object>>();
-
-                Console.WriteLine("Converting data -- " + DateTime.Now.ToString("s"));
-                using (var connection = new SQLiteConnection("Data Source=swccg_db.sqlite;Version=3"))
+                if (args.Length < 2)
                 {
-                    connection.Open();
-
-                    using (var command = connection.CreateCommand())
-                    {
-                        command.CommandText = "SELECT * FROM SWD";
-                        command.Prepare();
-
-                        using (var reader = command.ExecuteReader())
-                        {
-                            int idOrdinal = reader.GetOrdinal("id");
-                            int uniquenessOrdinal = reader.GetOrdinal("Uniqueness");
-                            int groupingOrdinal = reader.GetOrdinal("Grouping");
-                            int cardTypeOrdinal = reader.GetOrdinal("CardType");
-                            int cardNameOrdinal = reader.GetOrdinal("CardName");
-                            int subtypeOrdinal = reader.GetOrdinal("Subtype");
-                            int expansionOrdinal = reader.GetOrdinal("Expansion");
-
-                            var darkGempLookup = GempTitles.Organized(gempTitles.DarkSide);
-                            var lightGempLookup = GempTitles.Organized(gempTitles.LightSide);
-
-                            while (reader.Read())
-                            {
-                                ++rowCount;
-                                var fields = new Dictionary<string, object>();
-                                var swIpId = reader[idOrdinal].ToString();
-                                var frontId = Guid.NewGuid().ToString();
-                                var grouping = reader.GetString(groupingOrdinal);
-                                var isLightSide = grouping == "Light";
-                                var cardType = reader.GetString(cardTypeOrdinal);
-                                var cardName = WithoutSuffix(reader.GetString(cardNameOrdinal));
-                                var expansion = reader.GetString(expansionOrdinal);
-                                var gempLookup = isLightSide ? lightGempLookup : darkGempLookup;
-                                fields.Add("ImageId", frontId.ToString());
-                                fields.Add("OtherImageId", isLightSide ? lightBackId : darkBackId);
-                                fields.Add("IsLightSide", isLightSide);
-                                fields.Add("IsFront", true);
-
-                                var gempExpansionId = GempExpansions[expansion];
-                                var gempIdByTitle = gempLookup[gempExpansionId];
-                                
-                                if (gempIdByTitle.TryGetValue(cardName, out var gempId) ||
-                                    (gempExpansionId == "200" && gempLookup["301"].TryGetValue(cardName, out gempId)))
-                                {
-                                    fields.Add("GempId", gempId);
-                                }
-                                else
-                                {
-                                    fields.Add("NoGemp", null);
-                                }
-
-                                for (int i = 0; i < reader.FieldCount; ++i)
-                                {
-                                    string name = i == idOrdinal ? "SwIpId" : reader.GetName(i);
-                                    var value = GetString(reader[i].ToString());
-
-                                    if (i == uniquenessOrdinal)
-                                    {
-                                        value = value.Replace('*', '•');
-                                    }
-                                    else if (i == cardNameOrdinal)
-                                    {
-                                        value = WithoutSuffix(value);
-                                    }
-                                    else if (i == subtypeOrdinal)
-                                    {
-                                        const string Or = " Or ";
-                                        var subtype = reader[i].ToString();
-                                        var option = StringSplitOptions.RemoveEmptyEntries;
-                                        var subtypes = subtype.Contains(Or) ? subtype.Split(Or, option) : subtype.Split('/', option);
-
-                                        if (swIpId == "832")
-                                        {
-                                            for (int j = 0; j < subtypes.Length; ++j)
-                                            {
-                                                // Need to cleanup sw-ip. :(
-                                                if (subtypes[j] == "Jedi Master")
-                                                    subtypes[j] = "Dark Jedi Master";
-                                            }
-                                        }
-                                        fields["Subtypes"] = subtypes;
-                                    }
-
-                                    if (!string.IsNullOrWhiteSpace(value))
-                                        fields.Add(name, value);
-                                }
-
-                                fields["CardNameNormalized"] = SearchNormalized(cardName);
-
-                                data.Add(fields);
-
-                                if (cardType == "Objective")
-                                {
-                                    cardName = fields["ObjectiveFrontName"].ToString();
-                                    
-                                    if (gempIdByTitle.TryGetValue(cardName, out gempId))
-                                    {
-                                        fields.Add("GempId", gempId);
-                                        fields.Remove("NoGemp");
-                                    }
-                                    
-                                    var backFields = new Dictionary<string, object>(fields);
-                                    var backId = Guid.NewGuid().ToString();
-                                    var backCardName = fields["ObjectiveBackName"].ToString();
-                                    
-                                    fields["OtherImageId"] = backId;
-                                    fields["CardName"] = cardName;
-                                    fields["Gametext"] = fields["ObjectiveFront"];
-                                    fields["CardNameNormalized"] = SearchNormalized(cardName);
-                                    fields["Destiny"] = "0";
-                                    
-                                    backFields["ImageId"] = backId;
-                                    backFields["OtherImageId"] = frontId;
-                                    backFields["IsFront"] = false;
-                                    backFields["CardName"] = fields["ObjectiveBackName"];
-                                    backFields["Gametext"] = fields["ObjectiveBack"];
-                                    backFields["CardNameNormalized"] = SearchNormalized(backCardName);
-                                    backFields["Destiny"] = "7";
-
-                                    data.Add(backFields);
-                                }
-                                else if (swIpId == "5055")
-                                {
-                                    fields["ImageId"] = falconFront;
-                                    fields["OtherImageId"] = falconBack;
-                                }
-                                else if (swIpId == "5056")
-                                {
-                                    fields["ImageId"] = falconBack;
-                                    fields["OtherImageId"] = falconFront;
-                                    fields["IsFront"] = false;
-                                }
-                                else if (swIpId == "5117")
-                                {
-                                    fields["ImageId"] = frozenLukeFront;
-                                    fields["OtherImageId"] = frozenLukeBack;
-                                }
-                                else if (swIpId == "5118")
-                                {
-                                    fields["ImageId"] = frozenLukeBack;
-                                    fields["OtherImageId"] = frozenLukeFront;
-                                    fields["IsFront"] = false;
-                                }
-                                else if (swIpId == "1361" || swIpId == "3208")
-                                {
-                                    fields["OtherImageId"] = frozenHan;
-                                }
-                            }
-                        }
-                    }
+                    Console.WriteLine("Must specify card JSON folder and output file.");
                 }
-
-                var options = new JsonSerializerOptions
+                else
                 {
-                    WriteIndented = true
-                };
-                
-                using (var stream = File.Create("swccg.json"))
-                    await JsonSerializer.SerializeAsync(stream, data, options);
-                
-                foreach (var d in data)
-                {
-                    if (d.TryGetValue("GempId", out var obj))
-                    {
-                        var gempId = obj.ToString();
-                        gempTitles.DarkSide.Remove(gempId);
-                        gempTitles.LightSide.Remove(gempId);
-                    }
+                    await ExportAsync(args[0], args[1]);
                 }
-
-                using (var stream = File.Create("gemp-missing.json"))
-                    await JsonSerializer.SerializeAsync(stream, gempTitles, options);
-                
-                var cardCount = data.Count(d => (bool)d["IsFront"]);
-                Console.WriteLine($"Converted {cardCount} cards ({rowCount} rows) to {data.Count} faces in {stopwatch.Elapsed}");
-
-                // foreach (var cardName in data.Select(d => d["CardName"].ToString()).Where(cn => cn.EndsWith(")")))
-                //     Console.WriteLine(cardName);
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex);
             }
+        }
+
+        static async Task ExportAsync(string cardFolder, string cardFile)
+        {
+            var stopwatch = Stopwatch.StartNew();
+            var darkBackId = "60cca2dd-a989-4c55-8a7b-cd6b86a95ce5";
+            var lightBackId = "14c10fe6-199e-4b7d-9cea-1c7247e42d3e";
+            
+            var falconFront = Guid.NewGuid().ToString();
+            var falconBack = Guid.NewGuid().ToString();
+            var frozenLukeFront = Guid.NewGuid().ToString();
+            var frozenLukeBack = Guid.NewGuid().ToString();
+            var frozenHan = Guid.NewGuid().ToString();
+            int rowCount = 0;
+
+            GempTitles gempTitles;
+
+            using (var stream = File.OpenRead("gemp-titles.json"))
+                gempTitles = await JsonSerializer.DeserializeAsync<GempTitles>(stream);
+
+            var data = new List<Dictionary<string, object>>();
+
+            Console.WriteLine("Converting data -- " + DateTime.Now.ToString("s"));
+            var darkGempLookup = GempTitles.Organized(gempTitles.DarkSide);
+            var lightGempLookup = GempTitles.Organized(gempTitles.LightSide);
+            
+            foreach (var file in Directory.GetFiles(cardFolder))
+            {
+                using (var document = await ParseJsonFileAsync(file))
+                {
+                    foreach (var element in document.RootElement.EnumerateArray())
+                    {
+                        ++rowCount;
+                        var swIpId = element.GetProperty("id").GetInt32();
+                        var frontId = Guid.NewGuid().ToString();
+                        var grouping = element.GetProperty("Grouping").GetString();
+                        var isLightSide = grouping == "Light";
+                        var cardType = element.GetProperty("CardType").GetString();
+                        var expansion = element.GetProperty("Expansion").GetString();
+                        var gempLookup = isLightSide ? lightGempLookup : darkGempLookup;
+                        var isObjective = cardType == "Objective";
+                        var isLocation = cardType == "Location";
+                        var backId = isObjective ? Guid.NewGuid().ToString() : (isLightSide ? lightBackId : darkBackId);
+                        var cardNameField = isObjective ? "ObjectiveFrontName" : "CardName";
+                        var cardName = WithoutSuffix(element.GetProperty(cardNameField).GetString());
+                        var destiny = "0";
+                        
+                        var fields = new Dictionary<string, object>();
+                        fields.Add("ImageId", frontId.ToString());
+                        fields.Add("OtherImageId", backId);
+                        fields.Add("Title", cardName);
+                        fields.Add("TitleNormalized", SearchNormalized(cardName));
+                        fields.Add("Expansion", expansion);
+                        MaybeAddString(fields, element, "Rarity");
+
+                        if (element.TryGetProperty("Destiny", out var destinyProperty))
+                        {
+                            if (destinyProperty.ValueKind == JsonValueKind.Number)
+                                destiny = destinyProperty.GetDouble().ToString();
+                            else
+                                destiny = destinyProperty.GetString().Replace("pi", "π");
+                        }
+
+                        fields.Add("Destiny", destiny);
+                        
+                        if (element.TryGetProperty("Uniqueness", out var uniquenessElement))
+                        {
+                            var uniqueness = uniquenessElement.GetString();
+                            fields.Add("Uniqueness", uniqueness.Replace('*', '•'));
+                        }
+
+                        fields.Add("PrimaryType", cardType);
+
+                        var secondaryTypes = Array.Empty<string>();
+                        if (element.TryGetProperty("Subtype", out var subtypeElement))
+                        {
+                            const string Or = " Or ";
+                            var subtype = subtypeElement.GetString();
+                            secondaryTypes = subtype.Contains(Or) ?
+                                subtype.Split(Or, StringSplitOptions.RemoveEmptyEntries) :
+                                subtype.Split('/', StringSplitOptions.RemoveEmptyEntries);
+                        }
+
+                        fields.Add("SecondaryTypes", secondaryTypes);
+                        fields.Add("IsLightSide", isLightSide);
+                        fields.Add("IsFront", true);
+
+                        var gempExpansionId = GempExpansions[expansion];
+                        var gempIdByTitle = gempLookup[gempExpansionId];
+                        var gempCardName = cardName.Replace('é', 'e');
+                        
+                        if (gempIdByTitle.TryGetValue(gempCardName, out var gempId) ||
+                            (gempExpansionId == "200" && gempLookup["301"].TryGetValue(gempCardName, out gempId)))
+                        {
+                            fields.Add("GempId", gempId);
+                        }
+                        else
+                        {
+                            fields.Add("NoGemp", null);
+                        }
+
+                        if (isLocation)
+                        {
+                            MaybeAddString(fields, element, "DarkSideText");
+                            MaybeAddString(fields, element, "LightSideText");
+                            MaybeAddInt32(fields, element, "DarkSideIcons");
+                            MaybeAddInt32(fields, element, "LightSideIcons");
+                        }
+                        else
+                        {
+                            var gametextField = isObjective ? "ObjectiveFront" : "Gametext";
+
+                            if (element.TryGetProperty(gametextField, out var property))
+                            {
+                                var gametext = FilterString(property.GetString());
+                                fields.Add("Gametext", gametext);
+                            }
+                        }
+
+                        var icons = Array.Empty<string>();
+                        if (element.TryGetProperty("Icons", out var iconsElement) && iconsElement.ValueKind == JsonValueKind.String)
+                        {
+                            var iconsText = iconsElement.GetString();
+                            icons = iconsText.Split(IconSeparators, StringSplitOptions.RemoveEmptyEntries);
+                        }
+
+                        fields.Add("Icons", icons);
+                        fields.Add("SwIp", element.Clone());
+                        data.Add(fields);
+
+                        if (isObjective)
+                        {
+                            var backFields = new Dictionary<string, object>(fields);
+
+                            backFields["ImageId"] = backId;
+                            backFields["OtherImageId"] = frontId;
+                            backFields["IsFront"] = false;
+
+                            var title = element.GetProperty("ObjectiveBackName").GetString();
+                            backFields["Title"] = title;
+                            backFields["TitleNormalized"] = SearchNormalized(title);
+                            backFields["Destiny"] = "7";
+
+                            var gametext = FilterString(element.GetProperty("ObjectiveBack").GetString());
+                            fields["Gametext"] = gametext;
+
+                            data.Add(backFields);
+                        }
+                        else if (swIpId == 5055)
+                        {
+                            fields["ImageId"] = falconFront;
+                            fields["OtherImageId"] = falconBack;
+                        }
+                        else if (swIpId == 5056)
+                        {
+                            fields["ImageId"] = falconBack;
+                            fields["OtherImageId"] = falconFront;
+                            fields["IsFront"] = false;
+                        }
+                        else if (swIpId == 5117)
+                        {
+                            fields["ImageId"] = frozenLukeFront;
+                            fields["OtherImageId"] = frozenLukeBack;
+                        }
+                        else if (swIpId == 5118)
+                        {
+                            fields["ImageId"] = frozenLukeBack;
+                            fields["OtherImageId"] = frozenLukeFront;
+                            fields["IsFront"] = false;
+                        }
+                        else if (swIpId == 1361 || swIpId == 3208)
+                        {
+                            fields["OtherImageId"] = frozenHan;
+                        }
+                    }
+                }
+            }
+
+            var options = new JsonSerializerOptions
+            {
+                WriteIndented = true
+            };
+            
+            using (var stream = File.Create("swccg.json"))
+                await JsonSerializer.SerializeAsync(stream, data, options);
+            
+            foreach (var d in data)
+            {
+                if (d.TryGetValue("GempId", out var obj))
+                {
+                    var gempId = obj.ToString();
+                    gempTitles.DarkSide.Remove(gempId);
+                    gempTitles.LightSide.Remove(gempId);
+                }
+            }
+
+            using (var stream = File.Create("gemp-missing.json"))
+                await JsonSerializer.SerializeAsync(stream, gempTitles, options);
+            
+            var cardCount = data.Count(d => (bool)d["IsFront"]);
+            Console.WriteLine($"Converted {cardCount} cards ({rowCount} rows) to {data.Count} faces in {stopwatch.Elapsed}");
+
+            // foreach (var cardName in data.Select(d => d["CardName"].ToString()).Where(cn => cn.EndsWith(")")))
+            //     Console.WriteLine(cardName);
         }
     }
 }
