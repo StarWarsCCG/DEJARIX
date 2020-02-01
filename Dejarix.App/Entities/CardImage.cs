@@ -18,6 +18,8 @@ namespace Dejarix.App.Entities
         [Required] public string Destiny { get; set; } = string.Empty;
         [Required] public string Expansion { get; set; } = string.Empty;
         [Required] public string InfoJson { get; set; } = string.Empty;
+        public string? GempId { get; set; }
+        public string? HolotableId { get; set; }
 
         public static CardImage FromJson(JsonElement json)
         {

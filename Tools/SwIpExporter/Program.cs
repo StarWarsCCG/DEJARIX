@@ -210,7 +210,8 @@ namespace SwIpExporter
             using (var stream = File.OpenRead("gemp-titles.json"))
                 gempTitles = await JsonSerializer.DeserializeAsync<GempTitles>(stream);
 
-            var data = new List<Dictionary<string, object>>();
+            var cardData = new List<Dictionary<string, object>>();
+            var cardsWithoutGemp = new Dictionary<string, string>();
 
             Console.WriteLine("Converting data -- " + DateTime.Now.ToString("s"));
             var darkGempLookup = GempTitles.Organized(gempTitles.DarkSide);
@@ -258,7 +259,7 @@ namespace SwIpExporter
                         if (element.TryGetProperty("Uniqueness", out var uniquenessElement))
                         {
                             var uniqueness = uniquenessElement.GetString();
-                            fields.Add("Uniqueness", uniqueness.Replace('*', '•'));
+                            fields.Add("Uniqueness", uniqueness.Replace('*', '•').Replace("<>", "♢"));
                         }
 
                         fields.Add("PrimaryType", cardType);
@@ -288,7 +289,8 @@ namespace SwIpExporter
                         }
                         else
                         {
-                            fields.Add("NoGemp", null);
+                            fields.Add("GempId", null);
+                            cardsWithoutGemp.Add(swIpId.ToString(), cardName);
                         }
 
                         if (isLocation)
@@ -318,7 +320,7 @@ namespace SwIpExporter
 
                         fields.Add("Icons", icons);
                         fields.Add("SwIp", element.Clone());
-                        data.Add(fields);
+                        cardData.Add(fields);
 
                         if (isObjective)
                         {
@@ -336,7 +338,7 @@ namespace SwIpExporter
                             var gametext = FilterString(element.GetProperty("ObjectiveBack").GetString());
                             fields["Gametext"] = gametext;
 
-                            data.Add(backFields);
+                            cardData.Add(backFields);
                         }
                         else if (swIpId == 5055)
                         {
@@ -374,11 +376,11 @@ namespace SwIpExporter
             };
             
             using (var stream = File.Create("swccg.json"))
-                await JsonSerializer.SerializeAsync(stream, data, options);
+                await JsonSerializer.SerializeAsync(stream, cardData, options);
             
-            foreach (var d in data)
+            foreach (var d in cardData)
             {
-                if (d.TryGetValue("GempId", out var obj))
+                if (d.TryGetValue("GempId", out var obj) && obj != null)
                 {
                     var gempId = obj.ToString();
                     gempTitles.DarkSide.Remove(gempId);
@@ -389,8 +391,11 @@ namespace SwIpExporter
             using (var stream = File.Create("gemp-missing.json"))
                 await JsonSerializer.SerializeAsync(stream, gempTitles, options);
             
-            var cardCount = data.Count(d => (bool)d["IsFront"]);
-            Console.WriteLine($"Converted {cardCount} cards ({rowCount} rows) to {data.Count} faces in {stopwatch.Elapsed}");
+            using (var stream = File.Create("sw-ip-missing.json"))
+                await JsonSerializer.SerializeAsync(stream, cardsWithoutGemp, options);
+            
+            var cardCount = cardData.Count(d => (bool)d["IsFront"]);
+            Console.WriteLine($"Converted {cardCount} cards ({rowCount} rows) to {cardData.Count} faces in {stopwatch.Elapsed}");
 
             // foreach (var cardName in data.Select(d => d["CardName"].ToString()).Where(cn => cn.EndsWith(")")))
             //     Console.WriteLine(cardName);
