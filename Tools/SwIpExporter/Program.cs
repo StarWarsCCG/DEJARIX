@@ -14,96 +14,6 @@ namespace SwIpExporter
     {
         static readonly string[] IconSeparators = new string[] { ", ", "," };
 
-        private static bool InRange(char c, char low, char high) => low <= c && c <= high;
-
-        static void MaybeAddInt32(Dictionary<string, object> dictionary, JsonElement element, string key)
-        {
-            var value = MaybeGetInt32(element, key);
-
-            if (value.HasValue)
-                dictionary.Add(key, value);
-        }
-        
-        static int? MaybeGetInt32(JsonElement element, string key)
-        {
-            if (element.TryGetProperty(key, out var property) &&
-                property.ValueKind == JsonValueKind.Number)
-            {
-                return property.GetInt32();
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        static void MaybeAddString(Dictionary<string, object> dictionary, JsonElement element, string key)
-        {
-            var value = MaybeGetString(element, key);
-
-            if (value != null)
-                dictionary.Add(key, value);
-        }
-        
-        static string MaybeGetString(JsonElement element, string key)
-        {
-            if (element.TryGetProperty(key, out var property) &&
-                property.ValueKind == JsonValueKind.String)
-            {
-                return property.GetString();
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        static string FilterString(string s)
-        {
-            return s
-                .Replace((char)65533, 'é')
-                .Replace("1/2", "½")
-                .Replace("1/4", "¼")
-                .Replace("<>", "♢")
-                .Replace("(*]", "•")
-                .Replace("(*)", "(•)")
-                .Replace("(**)", "(••)")
-                .Replace("(***)", "(•••)")
-                .Replace("\\par ", "\n")
-                .Replace("\\b0 ", "")
-                .Replace("\\b0", "")
-                .Replace("\\b ", "")
-                .Replace("\\ul0 ", "")
-                .Replace("\\ul0", "")
-                .Replace("\\ul ", "")
-                .Replace("  ", " ")
-                .Replace(" \n", "\n")
-                ;
-        }
-
-        static string SearchNormalized(string text)
-        {
-            if (text == null)
-                return null;
-            
-            var buffer = new char[text.Length];
-            int n = 0;
-
-            foreach (var c in text)
-            {
-                if (InRange(c, 'a', 'z') || InRange(c, '0', '9'))
-                {
-                    buffer[n++] = c;
-                }
-                else if ('A' <= c && c <= 'Z')
-                {
-                    buffer[n++] = (char)(c + 32);
-                }
-            }
-
-            return new string(buffer, 0, n);
-        }
-
         static async Task<JsonDocument> ParseJsonFileAsync(string file)
         {
             using (var stream = File.OpenRead(file))
@@ -142,23 +52,17 @@ namespace SwIpExporter
             var frozenHan = Guid.NewGuid().ToString();
             int rowCount = 0;
 
-            GempTitles gempTitles;
-
-            using (var stream = File.OpenRead("gemp-titles.json"))
-                gempTitles = await JsonSerializer.DeserializeAsync<GempTitles>(stream);
-
-            Dictionary<string, string> holotableTitles;
-
-            using (var stream = File.OpenRead("holotable-titles.json"))
-                holotableTitles = await JsonSerializer.DeserializeAsync<Dictionary<string, string>>(stream);
+            var gempTitles = await Gemp.LoadAsync();
+            var holotableTitles = await Holotable.LoadAsync();
             
             var cardData = new List<Dictionary<string, object>>();
             var cardsWithoutGemp = new Dictionary<string, string>();
 
             Console.WriteLine("Converting data -- " + DateTime.Now.ToString("s"));
-            var darkGempLookup = GempTitles.Organized(gempTitles.DarkSide);
-            var lightGempLookup = GempTitles.Organized(gempTitles.LightSide);
-            var holotableLookup = Holotable.Organized(holotableTitles);
+            var darkGempLookup = Gemp.Organized(gempTitles.DarkSide);
+            var lightGempLookup = Gemp.Organized(gempTitles.LightSide);
+            var darkHolotableLookup = Holotable.Organized(holotableTitles.DarkSide);
+            var lightHolotableLookup = Holotable.Organized(holotableTitles.LightSide);
             
             foreach (var file in Directory.GetFiles(cardFolder))
             {
@@ -174,6 +78,7 @@ namespace SwIpExporter
                         var cardType = element.GetProperty("CardType").GetString();
                         var expansion = element.GetProperty("Expansion").GetString();
                         var gempLookup = isLightSide ? lightGempLookup : darkGempLookup;
+                        var holotableLookup = isLightSide ? lightHolotableLookup : darkHolotableLookup;
                         var isObjective = cardType == "Objective";
                         var isLocation = cardType == "Location";
                         var backId = isObjective ? Guid.NewGuid().ToString() : (isLightSide ? lightBackId : darkBackId);
@@ -185,9 +90,9 @@ namespace SwIpExporter
                         fields.Add("ImageId", frontId.ToString());
                         fields.Add("OtherImageId", backId);
                         fields.Add("Title", cardName);
-                        fields.Add("TitleNormalized", SearchNormalized(cardName));
+                        fields.Add("TitleNormalized", Strings.Normalized(cardName));
                         fields.Add("Expansion", expansion);
-                        MaybeAddString(fields, element, "Rarity");
+                        Maybe.AddString(fields, element, "Rarity");
 
                         if (element.TryGetProperty("Destiny", out var destinyProperty))
                         {
@@ -223,7 +128,7 @@ namespace SwIpExporter
 
                         fields.Add("SwIpId", swIpId);
 
-                        var gempExpansionId = GempTitles.GempExpansions[expansion];
+                        var gempExpansionId = Gemp.GempExpansions[expansion];
                         var gempIdByTitle = gempLookup[gempExpansionId];
                         var gempCardName = cardName.Replace('é', 'e');
                         
@@ -240,7 +145,9 @@ namespace SwIpExporter
 
                         var holotableExpansionId = Holotable.Expansions[expansion];
                         var holotableIdByTitle = holotableLookup[holotableExpansionId];
-                        var holotableCardName = gempCardName.ToLowerInvariant();
+                        var holotableCardName = gempCardName
+                            .Replace('"', '\'')
+                            .ToLowerInvariant();
                         
                         if (holotableIdByTitle.TryGetValue(holotableCardName, out var holotableIds))
                         {
@@ -253,10 +160,10 @@ namespace SwIpExporter
 
                         if (isLocation)
                         {
-                            MaybeAddString(fields, element, "DarkSideText");
-                            MaybeAddString(fields, element, "LightSideText");
-                            MaybeAddInt32(fields, element, "DarkSideIcons");
-                            MaybeAddInt32(fields, element, "LightSideIcons");
+                            Maybe.AddString(fields, element, "DarkSideText");
+                            Maybe.AddString(fields, element, "LightSideText");
+                            Maybe.AddInt32(fields, element, "DarkSideIcons");
+                            Maybe.AddInt32(fields, element, "LightSideIcons");
                         }
                         else
                         {
@@ -264,7 +171,7 @@ namespace SwIpExporter
 
                             if (element.TryGetProperty(gametextField, out var property))
                             {
-                                var gametext = FilterString(property.GetString());
+                                var gametext = Strings.Filtered(property.GetString());
                                 fields.Add("Gametext", gametext);
                             }
                         }
@@ -277,7 +184,7 @@ namespace SwIpExporter
                         }
 
                         fields.Add("Icons", icons);
-                        fields.Add("SwIp", element.Clone());
+                        // fields.Add("SwIp", element.Clone());
                         cardData.Add(fields);
 
                         if (isObjective)
@@ -290,10 +197,10 @@ namespace SwIpExporter
 
                             var title = element.GetProperty("ObjectiveBackName").GetString();
                             backFields["Title"] = title;
-                            backFields["TitleNormalized"] = SearchNormalized(title);
+                            backFields["TitleNormalized"] = Strings.Normalized(title);
                             backFields["Destiny"] = "7";
 
-                            var gametext = FilterString(element.GetProperty("ObjectiveBack").GetString());
+                            var gametext = Strings.Filtered(element.GetProperty("ObjectiveBack").GetString());
                             fields["Gametext"] = gametext;
 
                             cardData.Add(backFields);

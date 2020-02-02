@@ -1,9 +1,12 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
+using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace SwIpExporter
 {
-    public class GempTitles
+    public class Gemp
     {
         public static readonly ImmutableDictionary<string, string> GempExpansions = new Dictionary<string, string>
         {
@@ -68,8 +71,11 @@ namespace SwIpExporter
 
             return result;
         }
-        
-        public Dictionary<string, string> DarkSide { get; set; }
-        public Dictionary<string, string> LightSide { get; set; }
+
+        public static async Task<CardTitles> LoadAsync()
+        {
+            using (var stream = File.OpenRead("gemp-titles.json"))
+                return await JsonSerializer.DeserializeAsync<CardTitles>(stream);
+        }
     }
 }

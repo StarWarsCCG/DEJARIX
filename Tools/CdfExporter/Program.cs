@@ -101,12 +101,14 @@ namespace CdfExporter
                             ["data"] = data
                         };
 
-                        var rawTitle = data[0];
-                        var lastDot = Math.Max(rawTitle.LastIndexOf(OldDot), rawTitle.LastIndexOf('>'));
-                        var start = lastDot + 1;
-                        var lastParen = rawTitle.LastIndexOf('(');
-                        var finish = lastParen - 1;
-                        var title = rawTitle.Substring(start, finish - start);
+                        var rawTitle = data[0]
+                            .Replace(OldDot.ToString(), "")
+                            .Replace("<", "")
+                            .Replace(">", "");
+                        var finish = rawTitle.LastIndexOf('(');
+                        if (rawTitle[finish - 1] == ' ')
+                            --finish;
+                        var title = rawTitle.Substring(0, finish);
                         titles.Add(id, title);
 
                         JsonSerializer.Serialize(writer, cardData);

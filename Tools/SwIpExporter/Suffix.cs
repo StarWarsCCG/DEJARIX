@@ -10,7 +10,9 @@ namespace SwIpExporter
             " (CC)",
             " (Frozen)",
             " (Starship)",
-            " (Vehicle)"
+            " (Vehicle)",
+            " (Premiere)",
+            " (Coruscant)"
         };
 
         public static string Removed(string cardName)

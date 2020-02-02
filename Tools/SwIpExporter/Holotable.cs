@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
+using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace SwIpExporter
 {
@@ -93,6 +96,28 @@ namespace SwIpExporter
             }
 
             return result;
+        }
+
+        public static async Task<CardTitles> LoadAsync()
+        {
+            Dictionary<string, string> allTitles;
+            using (var stream = File.OpenRead("holotable-titles.json"))
+                allTitles = await JsonSerializer.DeserializeAsync<Dictionary<string, string>>(stream);
+            
+            var cardTitles = new CardTitles
+            {
+                DarkSide = new Dictionary<string, string>(),
+                LightSide = new Dictionary<string, string>()
+            };
+
+            foreach (var pair in allTitles)
+            {
+                var isLightSide = pair.Key.Contains("-Light/");
+                var destination = isLightSide ? cardTitles.LightSide : cardTitles.DarkSide;
+                destination.Add(pair.Key, pair.Value);
+            }
+
+            return cardTitles;
         }
     }
 }
