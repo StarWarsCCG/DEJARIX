@@ -9,7 +9,7 @@ namespace SwIpExporter
 {
     public class Gemp
     {
-        public static readonly ImmutableDictionary<string, string> GempExpansions = new Dictionary<string, string>
+        public static readonly ImmutableDictionary<string, string> Expansions = new Dictionary<string, string>
         {
             ["Hoth"] = "3",
             ["Premiere"] = "1",
@@ -48,7 +48,8 @@ namespace SwIpExporter
             ["Virtual Card Set #8"] = "208",
             ["Virtual Card Set #9"] = "209",
             ["Virtual Card Set #10"] = "210",
-            ["Virtual Card Set #11"] = "211"
+            ["Virtual Card Set #11"] = "211",
+            ["Virtual Premium Set"] = "301"
         }.ToImmutableDictionary();
 
         public static Dictionary<string, Dictionary<string, string[]>> Organized(
@@ -78,6 +79,12 @@ namespace SwIpExporter
                 {
                     idByTitle.Add(pair.Value, new string[] { pair.Key });
                 }
+            }
+
+            foreach (var value in Expansions.Values)
+            {
+                if (!result.ContainsKey(value))
+                    result.Add(value, new Dictionary<string, string[]>());
             }
 
             return result;

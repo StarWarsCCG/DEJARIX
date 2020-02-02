@@ -154,7 +154,7 @@ namespace SwIpExporter
 
                         fields.Add("SwIpId", swIpId);
 
-                        var gempExpansionId = Gemp.GempExpansions[expansion];
+                        var gempExpansionId = Gemp.Expansions[expansion];
                         var gempIdByTitle = gempLookup[gempExpansionId];
                         var gempCardName = cardName.Replace('é', 'e');
                         
@@ -287,9 +287,17 @@ namespace SwIpExporter
                     gempTitles.DarkSide.Remove(gempId);
                     gempTitles.LightSide.Remove(gempId);
                 }
+
+                if (d.TryGetValue("HolotableId", out obj) && obj != null)
+                {
+                    var id = obj.ToString();
+                    holotableTitles.DarkSide.Remove(id);
+                    holotableTitles.LightSide.Remove(id);
+                }
             }
 
             await WriteToFileAsync("gemp-missing.json", gempTitles);
+            await WriteToFileAsync("ht-missing.json", holotableTitles);
             await WriteToFileAsync("sw-ip-missing.json", cardsWithoutGemp);
             
             var cardCount = cardData.Count(d => (bool)d["IsFront"]);

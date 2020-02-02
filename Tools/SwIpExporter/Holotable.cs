@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -48,7 +49,8 @@ namespace SwIpExporter
             ["Virtual Card Set #8"] = "Virtual8",
             ["Virtual Card Set #9"] = "Virtual9",
             ["Virtual Card Set #10"] = "Virtual10",
-            ["Virtual Card Set #11"] = "Virtual11"
+            ["Virtual Card Set #11"] = "Virtual11",
+            ["Virtual Premium Set"] = "VirtualPremium"
         }.ToImmutableDictionary();
 
         public static Dictionary<string, Dictionary<string, string[]>> Organized(
@@ -97,6 +99,12 @@ namespace SwIpExporter
                 }
             }
 
+            foreach (var value in Expansions.Values)
+            {
+                if (!result.ContainsKey(value))
+                    result.Add(value, new Dictionary<string, string[]>());
+            }
+
             return result;
         }
 
@@ -112,7 +120,7 @@ namespace SwIpExporter
                 LightSide = new Dictionary<string, string>()
             };
 
-            foreach (var pair in allTitles)
+            foreach (var pair in allTitles.Where(p => !p.Key.Contains("/legacy/")))
             {
                 var isLightSide = pair.Key.Contains("-Light/");
                 var destination = isLightSide ? cardTitles.LightSide : cardTitles.DarkSide;
