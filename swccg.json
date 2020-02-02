@@ -25829,25 +25829,6 @@
     "Icons": []
   },
   {
-    "ImageId": "1aca9bd3-2f69-4fd5-95ad-19e910ec1588",
-    "OtherImageId": "14c10fe6-199e-4b7d-9cea-1c7247e42d3e",
-    "Title": "The Republic No Longer Functions",
-    "TitleNormalized": "therepublicnolongerfunctions",
-    "Expansion": "Virtual Defensive Shields",
-    "Rarity": "Common",
-    "Destiny": "0",
-    "Uniqueness": "\u2022",
-    "PrimaryType": "Defensive Shield",
-    "SecondaryTypes": [],
-    "IsLightSide": true,
-    "IsFront": true,
-    "SwIpId": 5392,
-    "GempId": "200_29",
-    "HolotableId": "/starwars/ResetDS-Light/t_therepublicnolongerfunctions",
-    "Gametext": "Plays on table. While you have 12 or fewer cards in hand, opponent may not remove cards from your hand (except with Monnok). Once per turn (even at start of turn), target a [Coruscant] Political Effect; it is suspended for the remainder of the turn.",
-    "Icons": []
-  },
-  {
     "ImageId": "ae210b99-198e-4d6e-ace9-716faf888b47",
     "OtherImageId": "60cca2dd-a989-4c55-8a7b-cd6b86a95ce5",
     "Title": "Director Orson Krennic",

@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml;
 using Dejarix.App.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -147,6 +148,45 @@ namespace Dejarix.App.Controllers
                     PrivateHaveCount = c.PrivateHaveCount,
                     PrivateWantCount = c.PrivateWantCount
                 });
+
+            return Ok(result);
+        }
+
+        [HttpPost("deck-import/gemp")]
+        [Consumes("application/xml")]
+        [RequestSizeLimit(100 << 10)] // 100 KiB
+        public async Task<IActionResult> PostDeckImportGemp(CancellationToken cancellationToken)
+        {
+            var result = new List<CardImage>();
+
+            var settings = new XmlReaderSettings
+            {
+                Async = true
+            };
+            
+            using (var reader = XmlReader.Create(Request.Body, settings))
+            {
+                while (await reader.ReadAsync())
+                {
+                    if (reader.Name == "card")
+                    {
+                        var gempId = reader.GetAttribute("blueprintId");
+                        var gempTitle = reader.GetAttribute("title");
+
+                        var mapping = await _context.CardImageMappings.FindAsync(CardImageMapping.Gemp, gempId);
+
+                        if (mapping != null)
+                        {
+                            var cardImage = await _context.CardImages.FindAsync(mapping.CardImageId);
+
+                            if (cardImage != null)
+                            {
+                                result.Add(cardImage);
+                            }
+                        }
+                    }
+                }
+            }
 
             return Ok(result);
         }

@@ -9,6 +9,7 @@ namespace Dejarix.App.Entities
     {
         [Key] public Guid ImageId { get; set; }
         public Guid OtherId { get; set; }
+        public Guid? AlternateImageOf { get; set; }
         public bool IsLightSide { get; set; }
         public bool IsFront { get; set; }
         public bool IsHorizontal { get; set; }
@@ -43,6 +44,9 @@ namespace Dejarix.App.Entities
             };
 
             result.TitleNormalized = result.Title.NormalizedForSearch();
+
+            if (json.TryGetProperty("AlternateImageOf", out var ai))
+                result.AlternateImageOf = Guid.Parse(ai.GetString());
 
             return result;
         }

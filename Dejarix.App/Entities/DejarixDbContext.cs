@@ -12,6 +12,7 @@ namespace Dejarix.App.Entities
     {
         // https://docs.microsoft.com/en-us/ef/core/miscellaneous/nullable-reference-types#dbcontext-and-dbset
         public DbSet<CardImage> CardImages { get; set; } = null!;
+        public DbSet<CardImageMapping> CardImageMappings { get; set; } = null!;
         public DbSet<Deck> Decks { get; set; } = null!;
         public DbSet<DeckRevision> DeckRevisions { get; set; } = null!;
         public DbSet<CardInDeckRevision> CardsInDeckRevisions { get; set; } = null!;
@@ -42,6 +43,33 @@ namespace Dejarix.App.Entities
                 {
                     var cardImage = CardImage.FromJson(cardJson);
                     await CardImages.AddAsync(cardImage);
+
+                    if (cardImage.IsFront)
+                    {
+                        if (cardImage.GempId != null)
+                        {
+                            var mapping = new CardImageMapping
+                            {
+                                Group = CardImageMapping.Gemp,
+                                ExternalId = cardImage.GempId,
+                                CardImageId = cardImage.ImageId
+                            };
+
+                            await CardImageMappings.AddAsync(mapping);
+                        }
+
+                        if (cardImage.HolotableId != null)
+                        {
+                            var mapping = new CardImageMapping
+                            {
+                                Group = CardImageMapping.Holotable,
+                                ExternalId = cardImage.HolotableId,
+                                CardImageId = cardImage.ImageId
+                            };
+
+                            await CardImageMappings.AddAsync(mapping);
+                        }
+                    }
                 }
 
                 await SaveChangesAsync();
@@ -51,6 +79,7 @@ namespace Dejarix.App.Entities
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+            builder.Entity<CardImageMapping>().HasKey(cim => new{cim.Group, cim.ExternalId});
             builder.Entity<ExceptionLog>().HasKey(el => new{el.ExceptionId, el.Ordinal});
             builder.Entity<CardInventory>().HasKey(co => new{co.UserId, co.CardImageId});
             builder.Entity<CardInventory>().HasOne(co => co.User);
@@ -84,6 +113,7 @@ namespace Dejarix.App.Entities
                 .WithMany()
                 .OnDelete(DeleteBehavior.SetNull);
             
+            builder.Entity<CardImageMapping>().HasIndex(cim => new{cim.CardImageId, cim.Group, cim.ExternalId});
             builder.Entity<Trade>().HasIndex(t => new {t.FirstUserId, t.Started});
             builder.Entity<Trade>().HasIndex(t => new {t.SecondUserId, t.Started});
             builder.Entity<CardInTrade>().HasKey(cit => new {cit.TradeProposalId, cit.UserId, cit.CardId});
