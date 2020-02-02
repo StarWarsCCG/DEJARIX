@@ -86,6 +86,7 @@ namespace SwIpExporter
                         var n = ids.Length;
                         Array.Resize(ref ids, n + 1);
                         ids[n] = pair.Key;
+                        idByTitle[title] = ids;
                         // Console.WriteLine(pair.Value + " : " + JsonSerializer.Serialize(ids));
                     }
                     else

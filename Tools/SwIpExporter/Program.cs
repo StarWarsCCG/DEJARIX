@@ -12,7 +12,23 @@ namespace SwIpExporter
 {
     class Program
     {
+        static readonly JsonSerializerOptions SerializerOptions = new JsonSerializerOptions
+        {
+            WriteIndented = true
+        };
+        
         static readonly string[] IconSeparators = new string[] { ", ", "," };
+
+        static readonly ImmutableHashSet<int> CardsWithAlt = ImmutableHashSet.Create(
+            172,629,1806,1888,
+            1981,1984,2194,2583,
+            2746,5338,631,1614,
+            1651,1659,1974,2213,
+            2381,2535,2870,4048,
+            4074,4075,4082,138,
+            307,633,1023,1616,
+            1801,1891,1973,2140,
+            5042,1615);
 
         static async Task<JsonDocument> ParseJsonFileAsync(string file)
         {
@@ -39,6 +55,12 @@ namespace SwIpExporter
             }
         }
 
+        static async Task WriteToFileAsync<T>(string file, T item)
+        {
+            using (var stream = File.Create(file))
+                await JsonSerializer.SerializeAsync(stream, item, SerializerOptions);
+        }
+
         static async Task ExportAsync(string cardFolder, string cardFile)
         {
             var stopwatch = Stopwatch.StartNew();
@@ -57,12 +79,16 @@ namespace SwIpExporter
             
             var cardData = new List<Dictionary<string, object>>();
             var cardsWithoutGemp = new Dictionary<string, string>();
+            var cardsWithoutHolotable = new Dictionary<string, string>();
+            var cardsWithAltImage = new List<int>();
 
             Console.WriteLine("Converting data -- " + DateTime.Now.ToString("s"));
             var darkGempLookup = Gemp.Organized(gempTitles.DarkSide);
             var lightGempLookup = Gemp.Organized(gempTitles.LightSide);
             var darkHolotableLookup = Holotable.Organized(holotableTitles.DarkSide);
             var lightHolotableLookup = Holotable.Organized(holotableTitles.LightSide);
+
+            // await WriteToFileAsync("debug-ht-dark.json", darkHolotableLookup);
             
             foreach (var file in Directory.GetFiles(cardFolder))
             {
@@ -132,10 +158,16 @@ namespace SwIpExporter
                         var gempIdByTitle = gempLookup[gempExpansionId];
                         var gempCardName = cardName.Replace('é', 'e');
                         
-                        if (gempIdByTitle.TryGetValue(gempCardName, out var gempId) ||
-                            (gempExpansionId == "200" && gempLookup["301"].TryGetValue(gempCardName, out gempId)))
+                        if (gempIdByTitle.TryGetValue(gempCardName, out var gempIds) ||
+                            (gempExpansionId == "200" && gempLookup["301"].TryGetValue(gempCardName, out gempIds)))
                         {
-                            fields.Add("GempId", gempId[0]);
+                            fields.Add("GempId", gempIds[0]);
+
+                            if (gempIds.Length > 1)
+                            {
+                                Console.WriteLine($"AI : {swIpId} : {cardName}");
+                                cardsWithAltImage.Add(swIpId);
+                            }
                         }
                         else
                         {
@@ -231,17 +263,21 @@ namespace SwIpExporter
                         {
                             fields["OtherImageId"] = frozenHan;
                         }
+
+                        if (CardsWithAlt.Contains(swIpId))
+                        {
+                            var altFields = new Dictionary<string, object>(fields);
+                            altFields["ImageId"] = Guid.NewGuid().ToString();
+                            altFields["GempId"] = gempIds[1];
+                            altFields["HolotableId"] = holotableIds[1];
+                            altFields["AlternateImageOf"] = fields["ImageId"];
+                            cardData.Add(altFields);
+                        }
                     }
                 }
             }
-
-            var options = new JsonSerializerOptions
-            {
-                WriteIndented = true
-            };
             
-            using (var stream = File.Create("swccg.json"))
-                await JsonSerializer.SerializeAsync(stream, cardData, options);
+            await WriteToFileAsync("swccg.json", cardData);
             
             foreach (var d in cardData)
             {
@@ -253,13 +289,11 @@ namespace SwIpExporter
                 }
             }
 
-            using (var stream = File.Create("gemp-missing.json"))
-                await JsonSerializer.SerializeAsync(stream, gempTitles, options);
-            
-            using (var stream = File.Create("sw-ip-missing.json"))
-                await JsonSerializer.SerializeAsync(stream, cardsWithoutGemp, options);
+            await WriteToFileAsync("gemp-missing.json", gempTitles);
+            await WriteToFileAsync("sw-ip-missing.json", cardsWithoutGemp);
             
             var cardCount = cardData.Count(d => (bool)d["IsFront"]);
+            Console.WriteLine(string.Join(',', cardsWithAltImage));
             Console.WriteLine($"Converted {cardCount} cards ({rowCount} rows) to {cardData.Count} faces in {stopwatch.Elapsed}");
 
             // foreach (var cardName in data.Select(d => d["CardName"].ToString()).Where(cn => cn.EndsWith(")")))
