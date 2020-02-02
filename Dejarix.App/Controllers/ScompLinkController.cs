@@ -83,7 +83,8 @@ namespace Dejarix.App.Controllers
                 .ToListAsync(cancellationToken);
 
             var objects = jsonText.ConvertAll(
-                item => JsonSerializer.Deserialize<Dictionary<string, object>>(item));
+                item => JsonSerializer.Deserialize<JsonElement>(item));
+            
             return Ok(objects);
         }
 

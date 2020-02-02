@@ -26,7 +26,7 @@ function doQuery() {
     const typeFilter = cardSearchTypeFilter.val();
 
     if (titleSearch) {
-        filters.push(c => c.CardNameNormalized.includes(titleSearch));
+        filters.push(c => c.TitleNormalized.includes(titleSearch));
     }
 
     if (typeFilterMap.hasOwnProperty(typeFilter)) {
@@ -67,7 +67,7 @@ function doQuery() {
 
     results.forEach(function(item) {
         const uniqueness = item.hasOwnProperty("Uniqueness") ? item.Uniqueness : '';
-        const fullTitle = escapeHtml(uniqueness + item.CardName);
+        const fullTitle = escapeHtml(uniqueness + item.Title);
         htmlResults.push(
             '<tr id="' +
             item.ImageId +
@@ -122,7 +122,7 @@ function doQuery() {
         }
 
         const uniqueness = card.hasOwnProperty("Uniqueness") ? card.Uniqueness : '';
-        const fullTitle = escapeHtml(uniqueness + card.CardName);
+        const fullTitle = escapeHtml(uniqueness + card.Title);
 
         cardDeckTableBody.append(
             '<tr><td>' +

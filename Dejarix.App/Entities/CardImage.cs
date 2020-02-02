@@ -34,10 +34,12 @@ namespace Dejarix.App.Entities
                     .EnumerateArray()
                     .Any(je => je.GetString() == "Site"),
                 IsVirtual = json.GetProperty("Expansion").GetString().StartsWith("Virtual"),
-                Title = json.GetProperty("CardName").GetString(),
+                Title = json.GetProperty("Title").GetString(),
                 Destiny = json.GetProperty("Destiny").GetString(),
                 Expansion = json.GetProperty("Expansion").GetString(),
-                InfoJson = json.ToString()
+                InfoJson = JsonSerializer.Serialize(json), // Nuke all the formatting.
+                GempId = json.GetProperty("GempId").MaybeGetString(),
+                HolotableId = json.GetProperty("HolotableId").MaybeGetString()
             };
 
             result.TitleNormalized = result.Title.NormalizedForSearch();

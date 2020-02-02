@@ -36,7 +36,7 @@ function escapeHtml (string) {
 }
 
 function compareByName(card1, card2) {
-    return card1.CardName.localeCompare(card2.CardName);
+    return card1.Title.localeCompare(card2.Title);
 }
 
 function getFrontId(card) {
