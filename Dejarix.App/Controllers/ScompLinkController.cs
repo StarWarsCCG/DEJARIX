@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
@@ -152,6 +153,51 @@ namespace Dejarix.App.Controllers
             return Ok(result);
         }
 
+        [HttpPost("deck-import/holotable")]
+        [RequestSizeLimit(100 << 10)] // 100 KiB
+        public async Task<IActionResult> PostDeckImportHolotable(CancellationToken cancellationToken)
+        {
+            var result = new List<CardImage>();
+            var fields = new List<string>();
+
+            using (var reader = new StreamReader(Request.Body))
+            {
+                while (true)
+                {
+                    var line = await reader.ReadLineAsync();
+
+                    if (line is null)
+                        break;
+                    
+                    fields.Clear();
+                    Holotable.AddFields(fields, line);
+
+                    if (fields.Count > 2 && fields[0] == "card")
+                    {
+                        var holotableId = fields[1];
+
+                        var mapping = await _context.CardImageMappings.SingleOrDefaultAsync(
+                            cim => cim.Group == CardImageMapping.Holotable && cim.ExternalId == holotableId,
+                            cancellationToken);
+                        
+                        if (mapping != null)
+                        {
+                            var cardImage = await _context.CardImages.SingleOrDefaultAsync(
+                                ci => ci.ImageId == mapping.CardImageId,
+                                cancellationToken);
+
+                            if (cardImage != null)
+                            {
+                                result.Add(cardImage);
+                            }
+                        }
+                    }
+                }
+            }
+
+            return Ok(result);
+        }
+
         [HttpPost("deck-import/gemp")]
         [Consumes("application/xml")]
         [RequestSizeLimit(100 << 10)] // 100 KiB
@@ -173,11 +219,15 @@ namespace Dejarix.App.Controllers
                         var gempId = reader.GetAttribute("blueprintId");
                         var gempTitle = reader.GetAttribute("title");
 
-                        var mapping = await _context.CardImageMappings.FindAsync(CardImageMapping.Gemp, gempId);
+                        var mapping = await _context.CardImageMappings.SingleOrDefaultAsync(
+                            cim => cim.Group == CardImageMapping.Gemp && cim.ExternalId == gempId,
+                            cancellationToken);
 
                         if (mapping != null)
                         {
-                            var cardImage = await _context.CardImages.FindAsync(mapping.CardImageId);
+                            var cardImage = await _context.CardImages.SingleOrDefaultAsync(
+                                ci => ci.ImageId == mapping.CardImageId,
+                                cancellationToken);
 
                             if (cardImage != null)
                             {
