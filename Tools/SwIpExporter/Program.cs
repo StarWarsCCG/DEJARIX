@@ -135,7 +135,7 @@ namespace SwIpExporter
                         if (gempIdByTitle.TryGetValue(gempCardName, out var gempId) ||
                             (gempExpansionId == "200" && gempLookup["301"].TryGetValue(gempCardName, out gempId)))
                         {
-                            fields.Add("GempId", gempId);
+                            fields.Add("GempId", gempId[0]);
                         }
                         else
                         {

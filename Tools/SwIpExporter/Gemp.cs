@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
@@ -50,10 +51,10 @@ namespace SwIpExporter
             ["Virtual Card Set #11"] = "211"
         }.ToImmutableDictionary();
 
-        public static Dictionary<string, Dictionary<string, string>> Organized(
+        public static Dictionary<string, Dictionary<string, string[]>> Organized(
             Dictionary<string, string> dictionary)
         {
-            var result = new Dictionary<string, Dictionary<string, string>>();
+            var result = new Dictionary<string, Dictionary<string, string[]>>();
 
             foreach (var pair in dictionary)
             {
@@ -62,11 +63,21 @@ namespace SwIpExporter
 
                 if (!result.TryGetValue(expansionId, out var idByTitle))
                 {
-                    idByTitle = new Dictionary<string, string>();
+                    idByTitle = new Dictionary<string, string[]>();
                     result.Add(expansionId, idByTitle);
                 }
 
-                idByTitle[pair.Value] = pair.Key;
+                if (idByTitle.TryGetValue(pair.Value, out var ids))
+                {
+                    var nn = ids.Length;
+                    Array.Resize(ref ids, nn + 1);
+                    ids[nn] = pair.Key;
+                    idByTitle[pair.Value] = ids;
+                }
+                else
+                {
+                    idByTitle.Add(pair.Value, new string[] { pair.Key });
+                }
             }
 
             return result;
