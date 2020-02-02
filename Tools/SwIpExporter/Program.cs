@@ -12,48 +12,6 @@ namespace SwIpExporter
 {
     class Program
     {
-        static readonly ImmutableDictionary<string, string> GempExpansions = new Dictionary<string, string>
-        {
-            ["Hoth"] = "3",
-            ["Premiere"] = "1",
-            ["Special Edition"] = "7",
-            ["Dagobah"] = "4",
-            ["Theed Palace"] = "14",
-            ["Enhanced Cloud City"] = "109",
-            ["Jabba's Palace"] = "6",
-            ["Reflections III"] = "13",
-            ["Tatooine"] = "11",
-            ["Third Anthology"] = "111",
-            ["Coruscant"] = "12",
-            ["Endor"] = "8",
-            ["Cloud City"] = "5",
-            ["Virtual Card Set #0"] = "200",
-            ["Reflections II"] = "10",
-            ["Death Star II"] = "9",
-            ["A New Hope"] = "2",
-            ["Virtual Defensive Shields"] = "200",
-            ["Jabba's Palace Sealed Deck"] = "112",
-            ["Official Tournament Sealed Deck"] = "106",
-            ["Enhanced Premiere Pack"] = "108",
-            ["Enhanced Jabba's Palace"] = "110",
-            ["Hoth 2 Player"] = "104",
-            ["Virtual Card Set #1"] = "201",
-            ["Jedi Pack"] = "102",
-            ["Premiere 2 Player"] = "101",
-            ["Rebel Leader Cards"] = "103",
-            ["Virtual Card Set #2"] = "202",
-            ["Virtual Card Set #3"] = "203",
-            ["Virtual Card Set #4"] = "204",
-            ["Virtual Card Set #5"] = "205",
-            ["Demonstration Deck Premium Card Set"] = "301",
-            ["Virtual Card Set #6"] = "206",
-            ["Virtual Card Set #7"] = "207",
-            ["Virtual Card Set #8"] = "208",
-            ["Virtual Card Set #9"] = "209",
-            ["Virtual Card Set #10"] = "210",
-            ["Virtual Card Set #11"] = "211"
-        }.ToImmutableDictionary();
-
         static readonly string[] IconSeparators = new string[] { ", ", "," };
 
         private static bool InRange(char c, char low, char high) => low <= c && c <= high;
@@ -146,27 +104,6 @@ namespace SwIpExporter
             return new string(buffer, 0, n);
         }
 
-        static readonly string[] Suffixes = new string[]
-        {
-            " (V)",
-            " (EP1)",
-            " (CC)",
-            " (Frozen)",
-            " (Starship)",
-            " (Vehicle)"
-        };
-
-        static string WithoutSuffix(string cardName)
-        {
-            foreach (var suffix in Suffixes)
-            {
-                if (cardName.EndsWith(suffix))
-                    cardName = cardName[..^suffix.Length];
-            }
-            
-            return cardName;
-        }
-
         static async Task<JsonDocument> ParseJsonFileAsync(string file)
         {
             using (var stream = File.OpenRead(file))
@@ -210,12 +147,18 @@ namespace SwIpExporter
             using (var stream = File.OpenRead("gemp-titles.json"))
                 gempTitles = await JsonSerializer.DeserializeAsync<GempTitles>(stream);
 
+            Dictionary<string, string> holotableTitles;
+
+            using (var stream = File.OpenRead("holotable-titles.json"))
+                holotableTitles = await JsonSerializer.DeserializeAsync<Dictionary<string, string>>(stream);
+            
             var cardData = new List<Dictionary<string, object>>();
             var cardsWithoutGemp = new Dictionary<string, string>();
 
             Console.WriteLine("Converting data -- " + DateTime.Now.ToString("s"));
             var darkGempLookup = GempTitles.Organized(gempTitles.DarkSide);
             var lightGempLookup = GempTitles.Organized(gempTitles.LightSide);
+            var holotableLookup = Holotable.Organized(holotableTitles);
             
             foreach (var file in Directory.GetFiles(cardFolder))
             {
@@ -235,7 +178,7 @@ namespace SwIpExporter
                         var isLocation = cardType == "Location";
                         var backId = isObjective ? Guid.NewGuid().ToString() : (isLightSide ? lightBackId : darkBackId);
                         var cardNameField = isObjective ? "ObjectiveFrontName" : "CardName";
-                        var cardName = WithoutSuffix(element.GetProperty(cardNameField).GetString());
+                        var cardName = Suffix.Removed(element.GetProperty(cardNameField).GetString());
                         var destiny = "0";
                         
                         var fields = new Dictionary<string, object>();
@@ -278,7 +221,9 @@ namespace SwIpExporter
                         fields.Add("IsLightSide", isLightSide);
                         fields.Add("IsFront", true);
 
-                        var gempExpansionId = GempExpansions[expansion];
+                        fields.Add("SwIpId", swIpId);
+
+                        var gempExpansionId = GempTitles.GempExpansions[expansion];
                         var gempIdByTitle = gempLookup[gempExpansionId];
                         var gempCardName = cardName.Replace('é', 'e');
                         
@@ -291,6 +236,19 @@ namespace SwIpExporter
                         {
                             fields.Add("GempId", null);
                             cardsWithoutGemp.Add(swIpId.ToString(), cardName);
+                        }
+
+                        var holotableExpansionId = Holotable.Expansions[expansion];
+                        var holotableIdByTitle = holotableLookup[holotableExpansionId];
+                        var holotableCardName = gempCardName.ToLowerInvariant();
+                        
+                        if (holotableIdByTitle.TryGetValue(holotableCardName, out var holotableIds))
+                        {
+                            fields.Add("HolotableId", holotableIds[0]);
+                        }
+                        else
+                        {
+                            fields.Add("HolotableId", null);
                         }
 
                         if (isLocation)

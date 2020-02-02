@@ -1,3 +1,4 @@
-/swccg*
-/gemp-*
-/sw-ip*
+/*.json
+/*.sdb
+/*.sqlite
+/*.xml
