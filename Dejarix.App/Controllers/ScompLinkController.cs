@@ -154,7 +154,7 @@ namespace Dejarix.App.Controllers
         }
 
         [HttpPost("deck-import/holotable")]
-        [RequestSizeLimit(100 << 10)] // 100 KiB
+        [RequestSizeLimit(32 << 10)] // 32 KiB
         public async Task<IActionResult> PostDeckImportHolotable(CancellationToken cancellationToken)
         {
             var result = new List<CardImage>();
@@ -200,7 +200,7 @@ namespace Dejarix.App.Controllers
 
         [HttpPost("deck-import/gemp")]
         [Consumes("application/xml")]
-        [RequestSizeLimit(100 << 10)] // 100 KiB
+        [RequestSizeLimit(32 << 10)] // 32 KiB
         public async Task<IActionResult> PostDeckImportGemp(CancellationToken cancellationToken)
         {
             var result = new List<CardImage>();

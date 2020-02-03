@@ -98,9 +98,9 @@ function doQuery() {
         activeCardBack = data.backId;
         cardSearchImage.empty();
         cardSearchImage.append(
-            '<img id="card-search-preview" src="/images/cards/png-370x512/' +
+            '<img id="card-search-preview" src="/images/cards/jpeg-370x512/' +
             activeCardFront +
-            '.png" alt="" />');
+            '.jpg" alt="" />');
         cardSearchModal.modal({keyboard:true,focus:true,show:true});
 
         $('#card-search-preview').click(function(ee) {
