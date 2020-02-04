@@ -165,6 +165,7 @@ namespace Dejarix.App.Controllers
                 
                 while (true)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     var line = await reader.ReadLineAsync();
 
                     if (line is null)
@@ -191,7 +192,7 @@ namespace Dejarix.App.Controllers
             var keys = countByHolotableId.Keys.ToArray();
             var mappings = await _context.CardImageMappings
                 .Where(cim => cim.Group == CardImageMapping.Holotable && keys.Contains(cim.ExternalId))
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
             
             var imageIdByHolotableId = mappings.ToDictionary(cim => cim.ExternalId, cim => cim.CardImageId);
 
@@ -212,7 +213,7 @@ namespace Dejarix.App.Controllers
         [RequestSizeLimit(32 << 10)] // 32 KiB
         public async Task<IActionResult> PostDeckImportGemp(CancellationToken cancellationToken)
         {
-            var result = new List<CardImage>();
+            var countByGempId = new Dictionary<string, int>();
 
             var settings = new XmlReaderSettings
             {
@@ -223,29 +224,33 @@ namespace Dejarix.App.Controllers
             {
                 while (await reader.ReadAsync())
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
+
                     if (reader.Name == "card")
                     {
                         var gempId = reader.GetAttribute("blueprintId");
                         var gempTitle = reader.GetAttribute("title");
 
-                        var mapping = await _context.CardImageMappings.SingleOrDefaultAsync(
-                            cim => cim.Group == CardImageMapping.Gemp && cim.ExternalId == gempId,
-                            cancellationToken);
-
-                        if (mapping != null)
-                        {
-                            var cardImage = await _context.CardImages.SingleOrDefaultAsync(
-                                ci => ci.ImageId == mapping.CardImageId,
-                                cancellationToken);
-
-                            if (cardImage != null)
-                            {
-                                result.Add(cardImage);
-                            }
-                        }
+                        countByGempId.TryGetValue(gempId, out var count);
+                        countByGempId[gempId] = count + 1;
                     }
                 }
             }
+
+            var keys = countByGempId.Keys.ToArray();
+            var mappings = await _context.CardImageMappings
+                .Where(cim => cim.Group == CardImageMapping.Gemp && keys.Contains(cim.ExternalId))
+                .ToListAsync(cancellationToken);
+            
+            var imageIdByGempId = mappings.ToDictionary(cim => cim.ExternalId, cim => cim.CardImageId);
+            var missing = countByGempId.FirstOrDefault(pair => !imageIdByGempId.ContainsKey(pair.Key)).Key;
+
+            if (missing != null)
+                return BadRequest($"Unrecognized card ID: {missing}");
+            
+            var result = countByGempId.ToDictionary(
+                pair => imageIdByGempId[pair.Key].ToString(),
+                pair => pair.Value);
 
             return Ok(result);
         }
