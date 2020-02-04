@@ -1,5 +1,6 @@
 using Dejarix.App.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace Dejarix.App
 {
@@ -7,9 +8,9 @@ namespace Dejarix.App
     {
         private readonly string _connectionString;
 
-        public ConnectionFactory(string connectionString)
+        public ConnectionFactory(IConfiguration configuration)
         {
-            _connectionString = connectionString;
+            _connectionString = configuration.GetConnectionString("PrimaryDatabase");
         }
 
         public void BuildOptions(DbContextOptionsBuilder builder)

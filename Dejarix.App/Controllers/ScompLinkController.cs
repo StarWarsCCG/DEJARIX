@@ -157,11 +157,12 @@ namespace Dejarix.App.Controllers
         [RequestSizeLimit(32 << 10)] // 32 KiB
         public async Task<IActionResult> PostDeckImportHolotable(CancellationToken cancellationToken)
         {
-            var result = new List<CardImage>();
-            var fields = new List<string>();
+            var countByHolotableId = new Dictionary<string, int>();
 
             using (var reader = new StreamReader(Request.Body))
             {
+                var fields = new List<string>();
+                
                 while (true)
                 {
                     var line = await reader.ReadLineAsync();
@@ -176,24 +177,32 @@ namespace Dejarix.App.Controllers
                     {
                         var holotableId = fields[1];
 
-                        var mapping = await _context.CardImageMappings.SingleOrDefaultAsync(
-                            cim => cim.Group == CardImageMapping.Holotable && cim.ExternalId == holotableId,
-                            cancellationToken);
+                        if (!int.TryParse(fields[2], out var count))
+                            return BadRequest($"Card \"{holotableId}\" has invalid count.");
                         
-                        if (mapping != null)
-                        {
-                            var cardImage = await _context.CardImages.SingleOrDefaultAsync(
-                                ci => ci.ImageId == mapping.CardImageId,
-                                cancellationToken);
-
-                            if (cardImage != null)
-                            {
-                                result.Add(cardImage);
-                            }
-                        }
+                        if (countByHolotableId.ContainsKey(holotableId))
+                            return BadRequest($"Card \"{holotableId}\" specified twice.");
+                        
+                        countByHolotableId.Add(holotableId, count);
                     }
                 }
             }
+
+            var keys = countByHolotableId.Keys.ToArray();
+            var mappings = await _context.CardImageMappings
+                .Where(cim => cim.Group == CardImageMapping.Holotable && keys.Contains(cim.ExternalId))
+                .ToListAsync();
+            
+            var imageIdByHolotableId = mappings.ToDictionary(cim => cim.ExternalId, cim => cim.CardImageId);
+
+            var missing = countByHolotableId.FirstOrDefault(pair => !imageIdByHolotableId.ContainsKey(pair.Key)).Key;
+
+            if (missing != null)
+                return BadRequest($"Unrecognized card ID: {missing}");
+            
+            var result = countByHolotableId.ToDictionary(
+                pair => imageIdByHolotableId[pair.Key].ToString(),
+                pair => pair.Value);
 
             return Ok(result);
         }

@@ -4,12 +4,19 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 
 namespace Dejarix.App.Entities
 {
     public class DejarixDbContext : IdentityDbContext<DejarixUser, IdentityRole<Guid>, Guid>
     {
+        public static void Create(IServiceProvider serviceProvider, DbContextOptionsBuilder builder)
+        {
+            var factory = serviceProvider.GetService<ConnectionFactory>();
+            factory.BuildOptions(builder);
+        }
+
         // https://docs.microsoft.com/en-us/ef/core/miscellaneous/nullable-reference-types#dbcontext-and-dbset
         public DbSet<CardImage> CardImages { get; set; } = null!;
         public DbSet<CardImageMapping> CardImageMappings { get; set; } = null!;

@@ -161,10 +161,6 @@ namespace Dejarix.App.Controllers
                 };
 
                 var response = await mailgun.SendEmailAsync(email);
-                response.EnsureSuccessStatusCode();
-
-                var content = await response.Content.ReadAsStringAsync();
-                
                 model.Success = $"Registration successful! Check {user.Email} for your confirmation link!";
                 return View(nameof(Register), model);
             }
@@ -256,8 +252,6 @@ namespace Dejarix.App.Controllers
                 };
                 
                 var response = await mailgun.SendEmailAsync(email);
-                response.EnsureSuccessStatusCode();
-                
                 model.Success = "An email has been sent!";
             }
 

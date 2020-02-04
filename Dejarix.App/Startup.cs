@@ -31,11 +31,8 @@ namespace Dejarix.App
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddHttpClient<Mailgun>();
-
-            var connectionString = Configuration.GetConnectionString("PrimaryDatabase");
-            var connectionFactory = new ConnectionFactory(connectionString);
-            services.AddSingleton(connectionFactory);
-            services.AddDbContext<DejarixDbContext>(connectionFactory.BuildOptions);
+            services.AddSingleton<ConnectionFactory>();
+            services.AddDbContext<DejarixDbContext>(DejarixDbContext.Create);
 
             services
                 .AddIdentity<DejarixUser, IdentityRole<Guid>>(options =>
