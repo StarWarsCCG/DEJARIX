@@ -161,7 +161,7 @@ namespace Dejarix.App.Controllers
                 };
 
                 var response = await mailgun.SendEmailAsync(email);
-                model.Success = $"Registration successful! Check {user.Email} for your confirmation link!";
+                model.Success = $"Registration successful! Check {user.Email} for your confirmation link! (Remember to check your spam folder.)";
                 return View(nameof(Register), model);
             }
             else
@@ -255,7 +255,7 @@ namespace Dejarix.App.Controllers
                 model.Success = "An email has been sent!";
             }
 
-            return View(model);
+            return View("Forgot", model);
         }
 
         [HttpGet("reset")]
@@ -318,7 +318,7 @@ namespace Dejarix.App.Controllers
                 }
             }
             
-            return View(model);
+            return View("Reset", model);
         }
     }
 }

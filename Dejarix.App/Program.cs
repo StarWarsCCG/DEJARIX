@@ -20,6 +20,7 @@ namespace Dejarix.App
             Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
+                    webBuilder.ConfigureLogging(builder => builder.AddConsole());
                     webBuilder.UseStartup<Startup>();
                 });
     }
