@@ -235,10 +235,9 @@ namespace Dejarix.App.Controllers
             else
             {
                 var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-                var bytes = Encoding.UTF8.GetBytes(token);
-                var hexToken = bytes.ToHex();
                 // https://stackoverflow.com/a/38311283
-                var path = Url.Action(nameof(Reset), new { userId = user.Id, token = hexToken });
+                // https://stackoverflow.com/a/43412134
+                var path = Url.Action(nameof(Reset), new { userId = user.Id, token = token });
                 var host = request.Scheme + "://" + request.Host;
                 var url = host + path;
                 var email = new Email
@@ -259,16 +258,32 @@ namespace Dejarix.App.Controllers
         }
 
         [HttpGet("reset")]
-        public IActionResult Reset(Guid userId, string token)
+        public async Task<IActionResult> Reset(Guid userId, string token)
         {
-            var bytes = token.AsHex();
-            var trueToken = Encoding.UTF8.GetString(bytes);
-
             var model = new ResetViewModel
             {
                 UserId = userId,
-                Token = trueToken
+                Token = token
             };
+            
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+
+            if (user is null)
+            {
+                model.Errors = new string[] { "Invalid user ID." };
+            }
+            else
+            {
+                // https://stackoverflow.com/a/51651691
+                model.UserAndTokenAreValid = await _userManager.VerifyUserTokenAsync(
+                    user,
+                    _userManager.Options.Tokens.PasswordResetTokenProvider,
+                    UserManager<DejarixUser>.ResetPasswordTokenPurpose,
+                    token);
+                
+                if (!model.UserAndTokenAreValid)
+                    model.Errors = new string[] { "Invalid token." };
+            }
 
             return View(model);
         }
@@ -301,10 +316,11 @@ namespace Dejarix.App.Controllers
 
                 if (user is null)
                 {
-                    model.Errors = new string[]{"Unrecognized user ID."};
+                    model.Errors = new string[]{"Invalid user ID."};
                 }
                 else
                 {
+                    model.UserAndTokenAreValid = true;
                     var result = await _userManager.ResetPasswordAsync(user, token, password);
 
                     if (result.Succeeded)

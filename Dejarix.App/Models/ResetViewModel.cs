@@ -8,5 +8,6 @@ namespace Dejarix.App.Models
         public string Token { get; set; } = string.Empty;
         public string[] Errors { get; set; } = Array.Empty<string>();
         public string Success { get; set; } = string.Empty;
+        public bool UserAndTokenAreValid { get; set; }
     }
 }
