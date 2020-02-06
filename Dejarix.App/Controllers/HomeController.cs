@@ -9,6 +9,7 @@ using Dejarix.App.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace Dejarix.App.Controllers
@@ -37,10 +38,39 @@ namespace Dejarix.App.Controllers
             throw new NotImplementedException();
         }
 
-        [HttpGet("card/{id}")]
-        public async Task<IActionResult> Card(Guid id)
+        [HttpGet("deck/view/{deckId}")]
+        public async Task<IActionResult> Deck(
+            Guid deckId,
+            CancellationToken cancellationToken)
         {
-            var card = await _context.CardImages.FindAsync(id);
+            var deck = await _context.Decks
+                .Include(d => d.Revision!)
+                .ThenInclude(dr => dr.Cards)
+                .ThenInclude(cidr => cidr.Card)
+                .SingleOrDefaultAsync(d => d.DeckId == deckId, cancellationToken);
+            
+            if (deck is null)
+            {
+                return NotFound();
+            }
+            else
+            {
+                var model = new DeckViewModel
+                {
+                    Deck = deck
+                };
+
+                return View("Deck", model);
+            }
+        }
+
+        [HttpGet("card/{cardId}")]
+        public async Task<IActionResult> Card(
+            Guid cardId,
+            CancellationToken cancellationToken)
+        {
+            var card = await _context.CardImages
+                .SingleOrDefaultAsync(c => c.ImageId == cardId, cancellationToken);
 
             if (card is null)
             {

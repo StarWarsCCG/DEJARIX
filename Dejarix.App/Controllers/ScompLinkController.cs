@@ -91,11 +91,13 @@ namespace Dejarix.App.Controllers
         }
 
         [HttpGet("deck-revision/{deckRevisionId}")]
-        public async Task<IActionResult> DeckRevision(Guid deckRevisionId)
+        public async Task<IActionResult> DeckRevision(
+            Guid deckRevisionId,
+            CancellationToken cancellationToken)
         {
             var deckRevision = await _context.DeckRevisions
                 .Include(dr => dr.Cards)
-                .SingleOrDefaultAsync(dr => dr.DeckRevisionId == deckRevisionId);
+                .SingleOrDefaultAsync(dr => dr.DeckRevisionId == deckRevisionId, cancellationToken);
 
             if (deckRevision is null)
             {
@@ -115,9 +117,12 @@ namespace Dejarix.App.Controllers
         }
 
         [HttpGet("deck/{deckId}")]
-        public async Task<IActionResult> Deck(Guid deckId)
+        public async Task<IActionResult> Deck(
+            Guid deckId,
+            CancellationToken cancellationToken)
         {
-            var deck = await _context.Decks.FindAsync(deckId);
+            var deck = await _context.Decks.SingleOrDefaultAsync(
+                d => d.DeckId == deckId, cancellationToken);
 
             if (deck is null)
             {
@@ -125,8 +130,104 @@ namespace Dejarix.App.Controllers
             }
             else
             {
-                return await DeckRevision(deck.RevisionId);
+                return await DeckRevision(deck.RevisionId, cancellationToken);
             }
+        }
+
+        [HttpPost("deck")]
+        [Authorize]
+        [RequestSizeLimit(32 << 10)] // 32 KiB
+        public async Task<IActionResult> PostDeck(CancellationToken cancellationToken)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            using var document = await JsonDocument.ParseAsync(
+                Request.Body,
+                default,
+                cancellationToken);
+            
+            var root = document.RootElement;
+            if (root.ValueKind != JsonValueKind.Object)
+                return BadRequest("Expected object");
+            
+            if (!root.TryGetProperty("insideCards", out var insideCardsJson))
+                return BadRequest("Missing 'insideCards' property.");
+            
+            if (insideCardsJson.ValueKind != JsonValueKind.Object)
+                return BadRequest("'insideCards' property must be object.");
+            
+            var insideCards = new Dictionary<Guid, int>();
+            foreach (var property in insideCardsJson.EnumerateObject())
+            {
+                if (!Guid.TryParse(property.Name, out var cardImageId))
+                    return BadRequest($"Card ID '{property.Name}' is not a valid UUID.");
+                
+                if (property.Value.ValueKind != JsonValueKind.Number)
+                    return BadRequest($"Missing quantity for card {property.Name}.");
+                
+                insideCards.Add(cardImageId, property.Value.GetInt32());
+            }
+
+            if (!root.TryGetProperty("outsideCards", out var outsideCardsJson))
+                return BadRequest("Missing 'outsideCards' property.");
+            
+            if (outsideCardsJson.ValueKind != JsonValueKind.Object)
+                return BadRequest("'outsideCards' property must be object.");
+            
+            var outsideCards = new Dictionary<Guid, int>();
+            foreach (var property in outsideCardsJson.EnumerateObject())
+            {
+                if (!Guid.TryParse(property.Name, out var cardImageId))
+                    return BadRequest($"Card ID '{property.Name}' is not a valid UUID.");
+                
+                if (property.Value.ValueKind != JsonValueKind.Number)
+                    return BadRequest($"Missing quantity for card {property.Name}.");
+                
+                outsideCards.Add(cardImageId, property.Value.GetInt32());
+            }
+            
+            var now = DateTimeOffset.Now;
+
+            var deckRevision = new DeckRevision
+            {
+                DeckRevisionId = Guid.NewGuid(),
+                CreatorId = user.Id,
+                CreationDate = now
+            };
+
+            _context.DeckRevisions.Add(deckRevision);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            var deck = new Deck
+            {
+                DeckId = Guid.NewGuid(),
+                IsPublic = true,
+                CreatorId = user.Id,
+                CreationDate = now,
+                ModifiedDate = now,
+                RevisionId = deckRevision.DeckRevisionId
+            };
+
+            _context.Decks.Add(deck);
+
+            _context.CardsInDeckRevisions.AddRange(insideCards.Select(
+                pair => new CardInDeckRevision
+                {
+                    DeckRevisionId = deckRevision.DeckRevisionId,
+                    CardId = pair.Key,
+                    InsideCount = pair.Value
+                }));
+            
+            _context.CardsInDeckRevisions.AddRange(outsideCards.Select(
+                pair => new CardInDeckRevision
+                {
+                    DeckRevisionId = deckRevision.DeckRevisionId,
+                    CardId = pair.Key,
+                    OutsideCount = pair.Value
+                }));
+
+            await _context.SaveChangesAsync(cancellationToken);
+            
+            return Ok(deck.DeckId.ToString());
         }
 
         [HttpGet("card-inventory")]
