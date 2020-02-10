@@ -56,6 +56,13 @@ namespace Dejarix.App
                 options.CheckConsentNeeded = context => true;
                 options.MinimumSameSitePolicy = Microsoft.AspNetCore.Http.SameSiteMode.None;
             });
+
+            services.ConfigureApplicationCookie(options =>
+            {
+                options.LoginPath = "/sign-in";
+                options.LogoutPath = "/sign-out";
+                options.ReturnUrlParameter = "returnUrl";
+            });
             
             services
                 .AddControllersWithViews()

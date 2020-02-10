@@ -40,7 +40,7 @@ namespace Dejarix.App.Controllers
         [HttpPost("sign-in")]
         [Consumes("application/x-www-form-urlencoded")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SignInPost()
+        public async Task<IActionResult> SignInPost(string returnUrl)
         {
             var request = HttpContext.Request;
             var formData = await request.ReadFormAsync();
@@ -70,7 +70,11 @@ namespace Dejarix.App.Controllers
             {
                 var signInPersist = formData["sign-in-persist"].FirstOrDefault();
                 await _signInManager.SignInAsync(user, signInPersist == "on");
-                return RedirectToAction(nameof(HomeController.Index), "Home");
+
+                if (string.IsNullOrWhiteSpace(returnUrl))
+                    return RedirectToAction(nameof(HomeController.Index), "Home");
+                else
+                    return Redirect(returnUrl);
             }
             else
             {

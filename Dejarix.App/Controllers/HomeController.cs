@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Dejarix.App.Entities;
 using Dejarix.App.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
@@ -41,6 +42,7 @@ namespace Dejarix.App.Controllers
         [HttpGet("decks/view/{deckId}")]
         public async Task<IActionResult> ViewDeck(
             Guid deckId,
+            [FromServices] UserManager<DejarixUser> userManager,
             CancellationToken cancellationToken)
         {
             var deck = await _context.Decks
@@ -61,11 +63,18 @@ namespace Dejarix.App.Controllers
                     PageTitle = deck.Revision?.Title ?? deck.DeckId.ToString()
                 };
 
+                if (User.Identity.IsAuthenticated)
+                {
+                    var user = await userManager.GetUserAsync(User);
+                    model.ShowEditLink = user.Id == deck.CreatorId;
+                }
+
                 return View(model);
             }
         }
 
         [HttpGet("decks/create")]
+        [Authorize]
         public IActionResult CreateDeck()
         {
             return RedirectToAction(
@@ -74,6 +83,7 @@ namespace Dejarix.App.Controllers
         }
 
         [HttpGet("decks/edit/{deckId}")]
+        [Authorize]
         public IActionResult EditDeck(Guid deckId)
         {
             var model = new EditDeckViewModel { DeckId = deckId };

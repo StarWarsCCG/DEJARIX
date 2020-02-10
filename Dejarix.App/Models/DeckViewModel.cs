@@ -6,5 +6,6 @@ namespace Dejarix.App.Models
     {
         public string PageTitle { get; set; } = string.Empty;
         public Deck? Deck { get; set; }
+        public bool ShowEditLink { get; set; }
     }
 }
