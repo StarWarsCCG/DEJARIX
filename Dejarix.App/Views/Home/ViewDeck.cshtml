@@ -1,0 +1,13 @@
+@model Dejarix.App.Models.DeckViewModel
+
+@{
+  ViewData["Title"] = "Deck " + Model.PageTitle;
+  var cards = Model.Deck!.Revision!.Cards!;
+}
+
+<ul>
+  @foreach (var c in cards)
+  {
+    <li>@c.CardId -- @c.Card!.Title</li>
+  }
+</ul>

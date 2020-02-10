@@ -38,8 +38,8 @@ namespace Dejarix.App.Controllers
             throw new NotImplementedException();
         }
 
-        [HttpGet("deck/view/{deckId}")]
-        public async Task<IActionResult> Deck(
+        [HttpGet("decks/view/{deckId}")]
+        public async Task<IActionResult> ViewDeck(
             Guid deckId,
             CancellationToken cancellationToken)
         {
@@ -57,11 +57,27 @@ namespace Dejarix.App.Controllers
             {
                 var model = new DeckViewModel
                 {
-                    Deck = deck
+                    Deck = deck,
+                    PageTitle = deck.Revision?.Title ?? deck.DeckId.ToString()
                 };
 
-                return View("Deck", model);
+                return View(model);
             }
+        }
+
+        [HttpGet("decks/create")]
+        public IActionResult CreateDeck()
+        {
+            return RedirectToAction(
+                nameof(EditDeck),
+                new { deckId = Guid.NewGuid() });
+        }
+
+        [HttpGet("decks/edit/{deckId}")]
+        public IActionResult EditDeck(Guid deckId)
+        {
+            var model = new EditDeckViewModel { DeckId = deckId };
+            return View(model);
         }
 
         [HttpGet("card/{cardId}")]
