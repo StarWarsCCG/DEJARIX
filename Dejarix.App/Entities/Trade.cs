@@ -11,6 +11,6 @@ namespace Dejarix.App.Entities
         public Guid CurrentProposalId { get; set; }
         public DateTimeOffset Started { get; set; }
         public DateTimeOffset? Completed { get; set; }
-        public string? Resolution { get; set; }
+        public string Resolution { get; set; }
     }
 }

@@ -9,7 +9,7 @@ namespace Dejarix.App.Entities
         public int InsideCount { get; set; }
         public int OutsideCount { get; set; }
 
-        public DeckRevision? DeckRevision { get; set; }
-        public CardImage? Card { get; set; }
+        public DeckRevision DeckRevision { get; set; }
+        public CardImage Card { get; set; }
     }
 }

@@ -127,7 +127,7 @@ namespace Dejarix.App.Entities
             builder.Entity<TradeMessage>().HasIndex(tm => new {tm.TradeId, tm.TimeSent});
         }
 
-        public async Task LogAsync(Exception? exception)
+        public async Task LogAsync(Exception exception)
         {
             var id = Guid.NewGuid();
             var now = DateTimeOffset.Now;

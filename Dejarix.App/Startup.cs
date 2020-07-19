@@ -78,9 +78,8 @@ namespace Dejarix.App
         public void Configure(
             IApplicationBuilder app,
             IWebHostEnvironment env,
-            IServiceProvider serviceProvider)
+            ConnectionFactory factory)
         {
-            var factory = serviceProvider.GetService<ConnectionFactory>();
             using (var context = factory.CreateContext())
             {
                 if (env.IsDevelopment() && Configuration.GetValue<bool>("DeleteDatabase"))

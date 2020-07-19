@@ -14,8 +14,8 @@ namespace Dejarix.App.Entities
         public Guid RevisionId { get; set; }
         public Guid? SourceDeckId { get; set; }
 
-        public DejarixUser? Creator { get; set; }
-        public DeckRevision? Revision { get; set; }
-        public Deck? SourceDeck { get; set; }
+        public DejarixUser Creator { get; set; }
+        public DeckRevision Revision { get; set; }
+        public Deck SourceDeck { get; set; }
     }
 }
