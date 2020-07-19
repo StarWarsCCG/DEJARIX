@@ -10,11 +10,11 @@ namespace Dejarix.Swccg
             ImmutableArray<Card>.Empty,
             ImmutableArray<Card>.Empty);
         
-        public ImmutableArray<Card> LocationStack { get; }
-        public ImmutableArray<Card> DarkSide { get; }
-        public ImmutableArray<Card> LightSide { get; }
+        public readonly ImmutableArray<Card> LocationStack { get; }
+        public readonly ImmutableArray<Card> DarkSide { get; }
+        public readonly ImmutableArray<Card> LightSide { get; }
 
-        public int Count =>
+        public readonly int Count =>
             LocationStack.Length +
             DarkSide.Length +
             LightSide.Length;

@@ -12,11 +12,11 @@ namespace Dejarix.Swccg
             PlayerState.Empty,
             PlayerState.Empty);
         
-        public ImmutableArray<SystemState> Systems { get; }
-        public PlayerState DarkSide { get; }
-        public PlayerState LightSide { get; }
+        public readonly ImmutableArray<SystemState> Systems { get; }
+        public readonly PlayerState DarkSide { get; }
+        public readonly PlayerState LightSide { get; }
 
-        public int Count
+        public readonly int Count
         {
             get
             {

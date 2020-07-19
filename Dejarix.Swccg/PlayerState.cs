@@ -16,16 +16,16 @@ namespace Dejarix.Swccg
             ImmutableArray<Card>.Empty,
             ImmutableArray<Card>.Empty);
 
-        public ImmutableArray<Card> ReserveDeck { get; }
-        public ImmutableArray<Card> ForcePile { get; }
-        public ImmutableArray<Card> UsedPile { get; }
-        public ImmutableArray<Card> LostPile { get; }
-        public ImmutableArray<Card> OutOfPlay { get; }
-        public ImmutableArray<Card> Table { get; }
-        public ImmutableArray<Card> Hand { get; }
-        public ImmutableArray<Card> Play { get; }
+        public readonly ImmutableArray<Card> ReserveDeck { get; }
+        public readonly ImmutableArray<Card> ForcePile { get; }
+        public readonly ImmutableArray<Card> UsedPile { get; }
+        public readonly ImmutableArray<Card> LostPile { get; }
+        public readonly ImmutableArray<Card> OutOfPlay { get; }
+        public readonly ImmutableArray<Card> Table { get; }
+        public readonly ImmutableArray<Card> Hand { get; }
+        public readonly ImmutableArray<Card> Play { get; }
 
-        public int Count =>
+        public readonly int Count =>
             ReserveDeck.Length +
             ForcePile.Length +
             UsedPile.Length +

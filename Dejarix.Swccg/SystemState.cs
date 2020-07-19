@@ -11,11 +11,11 @@ namespace Dejarix.Swccg
             ImmutableArray<LocationState>.Empty,
             ImmutableArray<LocationState>.Empty);
 
-        public LocationState System { get; }
-        public ImmutableArray<LocationState> Sectors { get; }
-        public ImmutableArray<LocationState> Sites { get; }
+        public readonly LocationState System { get; }
+        public readonly ImmutableArray<LocationState> Sectors { get; }
+        public readonly ImmutableArray<LocationState> Sites { get; }
 
-        public int Count
+        public readonly int Count
         {
             get
             {
