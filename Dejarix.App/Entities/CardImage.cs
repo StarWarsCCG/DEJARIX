@@ -19,6 +19,7 @@ namespace Dejarix.App.Entities
         [Required] public string Destiny { get; set; } = string.Empty;
         [Required] public string Expansion { get; set; } = string.Empty;
         [Required] public string InfoJson { get; set; } = string.Empty;
+        public int? SwIpId { get; set; }
         public string GempId { get; set; }
         public string HolotableId { get; set; }
 
@@ -39,6 +40,7 @@ namespace Dejarix.App.Entities
                 Destiny = json.GetProperty("Destiny").GetString(),
                 Expansion = json.GetProperty("Expansion").GetString(),
                 InfoJson = JsonSerializer.Serialize(json), // Nuke all the formatting.
+                SwIpId = json.GetProperty("SwIpId").MaybeGetInt32(),
                 GempId = json.GetProperty("GempId").MaybeGetString(),
                 HolotableId = json.GetProperty("HolotableId").MaybeGetString()
             };

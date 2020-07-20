@@ -95,6 +95,7 @@ namespace Dejarix.App.Entities
             builder.Entity<Trade>().HasIndex(t => new {t.SecondUserId, t.Started});
             builder.Entity<CardInTrade>().HasKey(cit => new {cit.TradeProposalId, cit.UserId, cit.CardId});
             builder.Entity<TradeMessage>().HasIndex(tm => new {tm.TradeId, tm.TimeSent});
+            builder.Entity<CardImage>().HasIndex(ci => new{ci.SwIpId});
             builder.Entity<CardImage>().HasIndex(ci => new{ci.GempId});
             builder.Entity<CardImage>().HasIndex(ci => new{ci.HolotableId});
         }
