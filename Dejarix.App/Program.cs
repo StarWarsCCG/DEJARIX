@@ -20,6 +20,7 @@ namespace Dejarix.App
             Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
+                    webBuilder.UseKestrel(options => options.ListenAnyIP(5000));
                     webBuilder.ConfigureLogging(builder => 
                     {
                         builder.ClearProviders();

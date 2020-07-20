@@ -291,11 +291,14 @@ namespace Dejarix.App.Controllers
             }
 
             var keys = countByHolotableId.Keys.ToArray();
-            var mappings = await _context.CardImageMappings
-                .Where(cim => cim.Group == CardImageMapping.Holotable && keys.Contains(cim.ExternalId))
+            var mappings = await _context.CardImages
+                .Where(ci => keys.Contains(ci.HolotableId))
+                .Select(ci => new {ci.ImageId, ci.HolotableId})
                 .ToListAsync(cancellationToken);
             
-            var imageIdByHolotableId = mappings.ToDictionary(cim => cim.ExternalId, cim => cim.CardImageId);
+            var imageIdByHolotableId = mappings.ToDictionary(
+                result => result.HolotableId,
+                result => result.ImageId);
 
             var missing = countByHolotableId.FirstOrDefault(pair => !imageIdByHolotableId.ContainsKey(pair.Key)).Key;
 
@@ -339,11 +342,15 @@ namespace Dejarix.App.Controllers
             }
 
             var keys = countByGempId.Keys.ToArray();
-            var mappings = await _context.CardImageMappings
-                .Where(cim => cim.Group == CardImageMapping.Gemp && keys.Contains(cim.ExternalId))
+            var mappings = await _context.CardImages
+                .Where(ci => keys.Contains(ci.GempId))
+                .Select(ci => new {ci.ImageId, ci.GempId})
                 .ToListAsync(cancellationToken);
             
-            var imageIdByGempId = mappings.ToDictionary(cim => cim.ExternalId, cim => cim.CardImageId);
+            var imageIdByGempId = mappings.ToDictionary(
+                result => result.GempId,
+                result => result.ImageId);
+            
             var missing = countByGempId.FirstOrDefault(pair => !imageIdByGempId.ContainsKey(pair.Key)).Key;
 
             if (missing != null)

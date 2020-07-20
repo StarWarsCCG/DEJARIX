@@ -18,18 +18,17 @@ namespace Dejarix.App.Entities
         }
 
         // https://docs.microsoft.com/en-us/ef/core/miscellaneous/nullable-reference-types#dbcontext-and-dbset
-        public DbSet<CardImage> CardImages { get; set; } = null!;
-        public DbSet<CardImageMapping> CardImageMappings { get; set; } = null!;
-        public DbSet<Deck> Decks { get; set; } = null!;
-        public DbSet<DeckRevision> DeckRevisions { get; set; } = null!;
-        public DbSet<CardInDeckRevision> CardsInDeckRevisions { get; set; } = null!;
-        public DbSet<CardInventory> CardInventories { get; set; } = null!;
-        public DbSet<ExceptionLog> ExceptionLogs { get; set; } = null!;
-        public DbSet<Trade> Trades { get; set; } = null!;
-        public DbSet<TradeProposal> TradeProposals { get; set; } = null!;
-        public DbSet<CardInTrade> CardsInTrades { get; set; } = null!;
-        public DbSet<TradeMessage> TradeMessages { get; set; } = null!;
-        public DbSet<Game> Games { get; set; } = null!;
+        public DbSet<CardImage> CardImages { get; set; }
+        public DbSet<Deck> Decks { get; set; }
+        public DbSet<DeckRevision> DeckRevisions { get; set; }
+        public DbSet<CardInDeckRevision> CardsInDeckRevisions { get; set; }
+        public DbSet<CardInventory> CardInventories { get; set; }
+        public DbSet<ExceptionLog> ExceptionLogs { get; set; }
+        public DbSet<Trade> Trades { get; set; }
+        public DbSet<TradeProposal> TradeProposals { get; set; }
+        public DbSet<CardInTrade> CardsInTrades { get; set; }
+        public DbSet<TradeMessage> TradeMessages { get; set; }
+        public DbSet<Game> Games { get; set; }
 
         public DejarixDbContext(DbContextOptions<DejarixDbContext> options) : base(options)
         {
@@ -50,33 +49,6 @@ namespace Dejarix.App.Entities
                 {
                     var cardImage = CardImage.FromJson(cardJson);
                     await CardImages.AddAsync(cardImage);
-
-                    if (cardImage.IsFront)
-                    {
-                        if (cardImage.GempId != null)
-                        {
-                            var mapping = new CardImageMapping
-                            {
-                                Group = CardImageMapping.Gemp,
-                                ExternalId = cardImage.GempId,
-                                CardImageId = cardImage.ImageId
-                            };
-
-                            await CardImageMappings.AddAsync(mapping);
-                        }
-
-                        if (cardImage.HolotableId != null)
-                        {
-                            var mapping = new CardImageMapping
-                            {
-                                Group = CardImageMapping.Holotable,
-                                ExternalId = cardImage.HolotableId,
-                                CardImageId = cardImage.ImageId
-                            };
-
-                            await CardImageMappings.AddAsync(mapping);
-                        }
-                    }
                 }
 
                 await SaveChangesAsync();
@@ -86,7 +58,6 @@ namespace Dejarix.App.Entities
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
-            builder.Entity<CardImageMapping>().HasKey(cim => new{cim.Group, cim.ExternalId});
             builder.Entity<ExceptionLog>().HasKey(el => new{el.ExceptionId, el.Ordinal});
             builder.Entity<CardInventory>().HasKey(co => new{co.UserId, co.CardImageId});
             builder.Entity<CardInventory>().HasOne(co => co.User);
@@ -120,11 +91,12 @@ namespace Dejarix.App.Entities
                 .WithMany()
                 .OnDelete(DeleteBehavior.SetNull);
             
-            builder.Entity<CardImageMapping>().HasIndex(cim => new{cim.CardImageId, cim.Group, cim.ExternalId});
             builder.Entity<Trade>().HasIndex(t => new {t.FirstUserId, t.Started});
             builder.Entity<Trade>().HasIndex(t => new {t.SecondUserId, t.Started});
             builder.Entity<CardInTrade>().HasKey(cit => new {cit.TradeProposalId, cit.UserId, cit.CardId});
             builder.Entity<TradeMessage>().HasIndex(tm => new {tm.TradeId, tm.TimeSent});
+            builder.Entity<CardImage>().HasIndex(ci => new{ci.GempId});
+            builder.Entity<CardImage>().HasIndex(ci => new{ci.HolotableId});
         }
 
         public async Task LogAsync(Exception exception)
