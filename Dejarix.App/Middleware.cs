@@ -24,14 +24,14 @@ namespace Dejarix.App
                         
                         try
                         {
-                            var factory = serviceProvider.GetService<ConnectionFactory>();
+                            var factory = serviceProvider.GetRequiredService<ConnectionFactory>();
                             
                             await using (var context = factory.CreateContext())
                                 await context.LogAsync(ex);
                         }
                         catch (Exception dbException)
                         {
-                            var logger = serviceProvider.GetService<ILogger>();
+                            var logger = serviceProvider.GetRequiredService<ILogger<ConnectionFactory>>();
                             logger.LogError(dbException, "Unable to write exception to database.");
                             logger.LogError(ex, "(This is the exception that was originally thrown.)");
                         }

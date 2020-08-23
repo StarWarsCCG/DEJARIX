@@ -2,7 +2,44 @@
     ViewData["Title"] = "Home Page";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="container">
+  <div class="row">
+    <div class="col-sm">
+      <div class="card">
+        <div class="card-header">
+          Recent Decks
+        </div>
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item">Hoth</li>
+          <li class="list-group-item">MWYHL</li>
+          <li class="list-group-item">wat</li>
+        </ul>
+      </div>
+    </div>
+    <div class="col-sm">
+      <h4>Recent Trades</h4>
+      <h4 class="text-center">Recent Trades</h4>
+    </div>
+    <div class="col-sm">
+      <div class="card">
+        <div class="card-header">
+          Active Games
+        </div>
+        <table class="table table-sm table-borderless">
+          <tbody>
+            <tr>
+              <td>13:21:15</td>
+              <td class="text-center">Alice vs Bob</td>
+              <td class="text-right"><a href="#">Watch Game</a></td>
+            </tr>
+            <tr>
+              <td>13:21:19</td>
+              <td class="text-center">Charlie vs Dan</td>
+              <td class="text-right"><a href="#">Watch Game</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </div>

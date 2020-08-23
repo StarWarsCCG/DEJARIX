@@ -16,16 +16,22 @@ namespace Dejarix.App
             CreateHostBuilder(args).Build().Run();
         }
 
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
+        public static IHostBuilder CreateHostBuilder(string[] args)
+        {
+            return Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
-                    webBuilder.UseKestrel(options => options.ListenAnyIP(5000));
+                    webBuilder.UseKestrel(options => options.ListenLocalhost(5000));
                     webBuilder.ConfigureLogging(builder => 
                     {
                         builder.ClearProviders();
-                        builder.AddConsole();
+                        builder.AddConsole(options =>
+                        {
+                            options.DisableColors = false;
+                            options.IncludeScopes = true;
+                        });
                     }).UseStartup<Startup>();
                 });
+        }
     }
 }

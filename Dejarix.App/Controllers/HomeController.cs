@@ -46,7 +46,7 @@ namespace Dejarix.App.Controllers
             CancellationToken cancellationToken)
         {
             var deck = await _context.Decks
-                .Include(d => d.Revision!)
+                .Include(d => d.Revision)
                 .ThenInclude(dr => dr.Cards)
                 .ThenInclude(cidr => cidr.Card)
                 .SingleOrDefaultAsync(d => d.DeckId == deckId, cancellationToken);
