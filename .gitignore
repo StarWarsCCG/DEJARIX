@@ -7,3 +7,5 @@ appsettings.*
 ignore.me.*
 *.sqlite
 *.sdb
+*.sh
+

@@ -1,4 +1,5 @@
 const cardDeckTableBody = $('#card-deck-table-body');
+const cardSearchModalLabel = $('#card-search-modal-label');
 var activeCardFront = null;
 var activeCardBack = null;
 var debuggery = null;
@@ -98,9 +99,9 @@ function doQuery() {
         activeCardBack = data.backId;
         cardSearchImage.empty();
         cardSearchImage.append(
-            '<img id="card-search-preview" src="/images/cards/jpeg-370x512/' +
+            '<img id="card-search-preview" src="/images/cards/png-370x512/' +
             activeCardFront +
-            '.jpg" alt="" />');
+            '.png" alt="" />');
         cardSearchModal.modal({keyboard:true,focus:true,show:true});
 
         $('#card-search-preview').click(function(ee) {
